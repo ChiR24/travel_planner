@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.0'
+        channel: 'stable'
+        cache: true
+    
+    - name: Install dependencies
+      run: flutter pub get
+    
+    - name: Verify formatting
+      run: dart format --output=none --set-exit-if-changed .
+    
+    - name: Analyze project source
+      run: flutter analyze
+    
+    - name: Run tests
+      run: flutter test --coverage
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: coverage/lcov.info
+        
+  build-web:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.0'
+        channel: 'stable'
+        cache: true
+    
+    - name: Install dependencies
+      run: flutter pub get
+    
+    - name: Build web
+      run: flutter build web --release
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build/web 
