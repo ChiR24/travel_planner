@@ -1,4 +1,3 @@
-
 /// Standard error codes for all services
 enum ServiceErrorCode {
   networkError,
@@ -219,4 +218,46 @@ extension ServiceResponseExtensions<T> on ServiceResponse<T> {
     }
     return this;
   }
+}
+
+class BaseServiceResponse<T> {
+  final T? data;
+  final String? error;
+  final int? code;
+  final bool isSuccess;
+
+  BaseServiceResponse._({
+    this.data,
+    this.error,
+    this.code,
+    required this.isSuccess,
+  });
+
+  factory BaseServiceResponse.success(T data) {
+    return BaseServiceResponse._(
+      data: data,
+      isSuccess: true,
+    );
+  }
+
+  factory BaseServiceResponse.error(String message, {int? code}) {
+    return BaseServiceResponse._(
+      error: message,
+      code: code,
+      isSuccess: false,
+    );
+  }
+
+  R when<R>({
+    required R Function(T data) success,
+    required R Function(String error, int? code) failure,
+  }) {
+    if (isSuccess && data != null) {
+      return success(data as T);
+    }
+    return failure(error ?? 'Unknown error', code);
+  }
+
+  bool get hasData => isSuccess && data != null;
+  bool get hasError => !isSuccess && error != null;
 }

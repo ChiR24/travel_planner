@@ -247,389 +247,185 @@ class _CustomPreferenceInputState extends State<CustomPreferenceInput>
         margin: const EdgeInsets.symmetric(vertical: 8),
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Add Custom Preference',
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        Text(
-                          'Customize your trip with specific preferences',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: Icon(_isSearching ? Icons.close : Icons.search),
-                      onPressed: () {
-                        setState(() {
-                          _isSearching = !_isSearching;
-                          if (!_isSearching) {
-                            _searchController.clear();
-                          }
-                        });
-                      },
-                    ),
-                  ],
-                ),
-                if (_isSearching) ...[
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      labelText: 'Search preferences',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                setState(() {
-                                  _searchController.clear();
-                                });
-                              },
-                            )
-                          : null,
-                    ),
-                    onChanged: (value) {
-                      setState(() {});
-                    },
-                  ),
-                ],
-                const SizedBox(height: 16),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 600),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Search and Filter
+                  Row(
                     children: [
-                      FilterChip(
-                        label: const Text('All'),
-                        selected: _selectedCategory.isEmpty,
-                        onSelected: (selected) {
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search preferences...',
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onChanged: (value) => setState(() {}),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: Icon(
+                          _isSearching ? Icons.close : Icons.filter_list,
+                          color: colorScheme.primary,
+                        ),
+                        onPressed: () {
                           setState(() {
-                            _selectedCategory = '';
+                            _isSearching = !_isSearching;
+                            if (!_isSearching) {
+                              _searchController.clear();
+                              _selectedCategory = '';
+                            }
                           });
                         },
                       ),
-                      const SizedBox(width: 8),
-                      ..._suggestedPreferences.keys.map((category) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(category),
-                            selected: _selectedCategory == category,
-                            onSelected: (selected) {
-                              setState(() {
-                                _selectedCategory = selected ? category : '';
-                              });
-                            },
-                          ),
-                        );
-                      }),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _keyController,
-                        decoration: InputDecoration(
-                          labelText: 'Preference Name',
-                          hintText: 'e.g., Food Type, Activity Level',
-                          prefixIcon: const Icon(Icons.label_outline),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 16),
+                  // Category Filter
+                  if (_isSearching) ...[
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          FilterChip(
+                            label: const Text('All'),
+                            selected: _selectedCategory.isEmpty,
+                            onSelected: (selected) {
+                              setState(() => _selectedCategory = '');
+                            },
                           ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a preference name';
-                          }
-                          if (widget.existingPreferences
-                              .containsKey(value.trim())) {
-                            return 'This preference already exists';
-                          }
-                          return null;
-                        },
+                          const SizedBox(width: 8),
+                          ...(_suggestedPreferences.keys.map((category) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                label: Text(category),
+                                selected: _selectedCategory == category,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _selectedCategory =
+                                        selected ? category : '';
+                                  });
+                                },
+                              ),
+                            );
+                          })),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _valueController,
-                        decoration: InputDecoration(
-                          labelText: 'Value',
-                          hintText: 'e.g., Vegetarian, High',
-                          prefixIcon: const Icon(Icons.edit_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a value';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
+                    const SizedBox(height: 16),
                   ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (context) => _buildSuggestionsSheet(context),
-                        );
-                      },
-                      icon: const Icon(Icons.lightbulb_outline),
-                      label: const Text('View Suggestions'),
+                  // Input Fields
+                  TextFormField(
+                    controller: _keyController,
+                    decoration: InputDecoration(
+                      labelText: 'Preference Key',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    ElevatedButton.icon(
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a preference key';
+                      }
+                      if (widget.existingPreferences
+                          .containsKey(value.trim())) {
+                        return 'This preference already exists';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _valueController,
+                    decoration: InputDecoration(
+                      labelText: 'Preference Value',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a preference value';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: ElevatedButton.icon(
                       onPressed: _addPreference,
                       icon: const Icon(Icons.add),
                       label: const Text('Add Preference'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                     ),
-                  ],
-                ),
-                if (widget.existingPreferences.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Custom Preferences',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () {
-                          // Clear all preferences
-                          widget.existingPreferences.keys
-                              .toList()
-                              .forEach((key) {
-                            widget.onPreferenceAdded(key, '');
-                          });
-                        },
-                        icon: const Icon(Icons.clear_all),
-                        label: const Text('Clear All'),
-                      ),
-                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Suggested Preferences
+                  Text(
+                    'Suggested Preferences',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: widget.existingPreferences.entries.map((entry) {
-                      final category = _suggestedPreferences[entry.key];
-                      final icon =
-                          category?['icon'] as IconData? ?? Icons.label_outline;
-                      final color =
-                          category?['color'] as Color? ?? colorScheme.primary;
-
-                      return Chip(
-                        avatar: Icon(icon, color: color, size: 18),
-                        label: Text('${entry.key}: ${entry.value}'),
-                        deleteIcon: const Icon(Icons.close, size: 18),
-                        onDeleted: () {
-                          widget.onPreferenceAdded(entry.key, '');
-                        },
-                      );
-                    }).toList(),
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _getFilteredPreferences().length,
+                      itemBuilder: (context, index) {
+                        final entry = _getFilteredPreferences()[index];
+                        return ExpansionTile(
+                          leading: Icon(
+                            entry.value['icon'] as IconData,
+                            color: entry.value['color'] as Color,
+                          ),
+                          title: Text(
+                            entry.key,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: (entry.value['values'] as List)
+                                    .map((value) {
+                                  return ActionChip(
+                                    label: Text(value.toString()),
+                                    onPressed: () => _selectSuggestedPreference(
+                                      entry.key,
+                                      value.toString(),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildSuggestionsSheet(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        final filteredPreferences = _getFilteredPreferences();
-
-        return Container(
-          decoration: BoxDecoration(
-            color: theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 8),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb_outline,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Suggested Preferences',
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tap any suggestion to use it',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: filteredPreferences.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.search_off,
-                              size: 48,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No matching preferences found',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: scrollController,
-                        itemCount: filteredPreferences.length,
-                        itemBuilder: (context, index) {
-                          final entry = filteredPreferences[index];
-                          final category = entry.value;
-
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              dividerColor: Colors.transparent,
-                            ),
-                            child: ExpansionTile(
-                              leading: Icon(
-                                category['icon'] as IconData,
-                                color: category['color'] as Color,
-                              ),
-                              title: Text(
-                                entry.key,
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              children: [
-                                Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                  child: Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: (category['values'] as List)
-                                        .map((value) {
-                                      return ActionChip(
-                                        avatar: Icon(
-                                          category['icon'] as IconData,
-                                          size: 18,
-                                          color: category['color'] as Color,
-                                        ),
-                                        label: Text(value),
-                                        onPressed: () {
-                                          _selectSuggestedPreference(
-                                              entry.key, value);
-                                          Navigator.pop(context);
-                                        },
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

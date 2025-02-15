@@ -94,6 +94,26 @@ class Itinerary {
   @override
   String toString() =>
       'Itinerary(id: $id, destinations: ${destinations.length} stops)';
+
+  Itinerary copyWith({
+    String? id,
+    String? origin,
+    List<String>? destinations,
+    DateTime? startDate,
+    DateTime? endDate,
+    Map<String, dynamic>? preferences,
+    List<Day>? days,
+  }) {
+    return Itinerary(
+      id: id ?? this.id,
+      origin: origin ?? this.origin,
+      destinations: destinations ?? this.destinations,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      preferences: preferences ?? this.preferences,
+      days: days ?? this.days,
+    );
+  }
 }
 
 class Day {

@@ -27,43 +27,55 @@ class ThemeSettings {
       highContrast: highContrast ?? this.highContrast,
     );
   }
+
+  static ThemeSettings get defaults => const ThemeSettings();
 }
 
-class ThemeNotifier extends StateNotifier<ThemeSettings> {
-  final SharedPreferences _prefs;
-
-  ThemeNotifier(this._prefs)
-      : super(ThemeSettings(
-          themeMode: ThemeMode
-              .values[_prefs.getInt('themeMode') ?? ThemeMode.system.index],
-          textScaleFactor: _prefs.getDouble('textScaleFactor') ?? 1.0,
-          highContrast: _prefs.getBool('highContrast') ?? false,
-        ));
-
-  void setThemeMode(ThemeMode mode) {
-    _prefs.setInt('themeMode', mode.index);
-    state = state.copyWith(themeMode: mode);
+class ThemeNotifier extends AsyncNotifier<ThemeSettings> {
+  @override
+  Future<ThemeSettings> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    return ThemeSettings(
+      themeMode:
+          ThemeMode.values[prefs.getInt('themeMode') ?? ThemeMode.system.index],
+      textScaleFactor: prefs.getDouble('textScaleFactor') ?? 1.0,
+      highContrast: prefs.getBool('highContrast') ?? false,
+    );
   }
 
-  void setTextScaleFactor(double factor) {
-    _prefs.setDouble('textScaleFactor', factor);
-    state = state.copyWith(textScaleFactor: factor);
+  Future<void> setThemeMode(ThemeMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('themeMode', mode.index);
+    state = AsyncData(state.value!.copyWith(themeMode: mode));
   }
 
-  void setHighContrast(bool enabled) {
-    _prefs.setBool('highContrast', enabled);
-    state = state.copyWith(highContrast: enabled);
+  Future<void> setTextScaleFactor(double factor) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('textScaleFactor', factor);
+    state = AsyncData(state.value!.copyWith(textScaleFactor: factor));
+  }
+
+  Future<void> setHighContrast(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('highContrast', enabled);
+    state = AsyncData(state.value!.copyWith(highContrast: enabled));
   }
 }
 
-final themeProvider =
-    StateNotifierProvider<ThemeNotifier, ThemeSettings>((ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
-  return ThemeNotifier(prefs);
+final themeProvider = AsyncNotifierProvider<ThemeNotifier, ThemeSettings>(() {
+  return ThemeNotifier();
+});
+
+final themeSettingsProvider = Provider<ThemeSettings>((ref) {
+  return ref.watch(themeProvider).when(
+        data: (settings) => settings,
+        loading: () => ThemeSettings.defaults,
+        error: (_, __) => ThemeSettings.defaults,
+      );
 });
 
 final effectiveThemeProvider = Provider<ThemeData>((ref) {
-  final settings = ref.watch(themeProvider);
+  final settings = ref.watch(themeSettingsProvider);
   final baseTheme = settings.themeMode == ThemeMode.dark
       ? AppTheme.darkTheme
       : AppTheme.lightTheme;
@@ -158,7 +170,8 @@ final effectiveThemeProvider = Provider<ThemeData>((ref) {
 });
 
 final effectiveThemeModeProvider = Provider<ThemeMode>((ref) {
-  return ref.watch(themeProvider).themeMode;
+  final settings = ref.watch(themeSettingsProvider);
+  return settings.themeMode;
 });
 
 // Extension to help with color manipulation

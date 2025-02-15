@@ -36,15 +36,23 @@ class NotificationSettings {
 }
 
 class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
-  final SharedPreferences _prefs;
   final NotificationService _notificationService;
+  late final SharedPreferences _prefs;
 
-  NotificationSettingsNotifier(this._prefs, this._notificationService)
-      : super(NotificationSettings(
-          activityReminders: _prefs.getBool('activityReminders') ?? false,
-          reminderMinutes: _prefs.getInt('reminderMinutes') ?? 30,
-          tripUpdates: _prefs.getBool('tripUpdates') ?? false,
-        ));
+  NotificationSettingsNotifier(
+    this._notificationService, {
+    SharedPreferences? prefs,
+    NotificationSettings? defaultSettings,
+  }) : super(defaultSettings ?? const NotificationSettings()) {
+    if (prefs != null) {
+      _prefs = prefs;
+      state = NotificationSettings(
+        activityReminders: _prefs.getBool('activityReminders') ?? false,
+        reminderMinutes: _prefs.getInt('reminderMinutes') ?? 30,
+        tripUpdates: _prefs.getBool('tripUpdates') ?? false,
+      );
+    }
+  }
 
   void setActivityReminders(bool enabled) async {
     if (enabled) {
@@ -75,9 +83,20 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
 final notificationSettingsProvider =
     StateNotifierProvider<NotificationSettingsNotifier, NotificationSettings>(
         (ref) {
-  final prefs = ref.watch(sharedPreferencesProvider);
+  final storageState = ref.watch(storageProvider);
   final notificationService = ref.watch(notificationServiceProvider);
-  return NotificationSettingsNotifier(prefs, notificationService);
+
+  if (!storageState.isInitialized || storageState.prefs == null) {
+    return NotificationSettingsNotifier(
+      notificationService,
+      defaultSettings: const NotificationSettings(),
+    );
+  }
+
+  return NotificationSettingsNotifier(
+    notificationService,
+    prefs: storageState.prefs,
+  );
 });
 
 // Provider for pending notifications

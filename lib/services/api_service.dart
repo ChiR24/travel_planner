@@ -1,65 +1,121 @@
 import 'dart:convert';
-import 'package:dio/dio.dart';
+import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'package:retry/retry.dart';
+import '../config/api_config.dart';
+import 'base_service.dart';
+import 'base_service_response.dart';
 
-class ApiService {
-  final Dio _dio;
-  final String baseUrl;
+class ApiService implements BaseService {
+  final http.Client _client;
+  bool _isInitialized = false;
 
-  ApiService({String? baseUrl})
-      : baseUrl = baseUrl ?? 'https://api.example.com/v1',
-        _dio = Dio(BaseOptions(
-          baseUrl: baseUrl ?? 'https://api.example.com/v1',
-          connectTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 3),
+  ApiService([http.Client? client]) : _client = client ?? http.Client();
+
+  @override
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+    _isInitialized = true;
+  }
+
+  Future<BaseServiceResponse<T>> get<T>(
+    String endpoint, {
+    Map<String, String>? headers,
+    Map<String, dynamic>? queryParameters,
+    T Function(Map<String, dynamic>)? fromJson,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint').replace(
+        queryParameters: queryParameters,
+      );
+
+      final response = await retry(
+        () => _client.get(
+          uri,
           headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            ...ApiConfig.defaultHeaders,
+            ...?headers,
           },
-        ));
+        ).timeout(const Duration(seconds: ApiConfig.timeout)),
+        retryIf: (e) => e is http.ClientException || e is TimeoutException,
+        maxAttempts: ApiConfig.maxRetries,
+      );
 
-  Future<Map<String, dynamic>> get(String endpoint) async {
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body) as Map<String, dynamic>;
+        if (fromJson != null) {
+          final data = fromJson(jsonData);
+          return BaseServiceResponse.success(data);
+        }
+        return BaseServiceResponse.success(jsonData as T);
+      }
+
+      return BaseServiceResponse.error(
+        'API Error: ${response.statusCode}',
+        code: response.statusCode,
+      );
+    } catch (e) {
+      return BaseServiceResponse.error('Network Error: $e');
+    }
+  }
+
+  Future<BaseServiceResponse<T>> post<T>(
+    String endpoint, {
+    Map<String, String>? headers,
+    Map<String, dynamic>? body,
+    T Function(Map<String, dynamic>)? fromJson,
+  }) async {
     try {
-      final response = await _dio.get(endpoint);
-      return response.data;
-    } on DioException catch (e) {
-      throw _handleError(e);
+      final uri = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+
+      final response = await retry(
+        () => _client
+            .post(
+              uri,
+              headers: {
+                ...ApiConfig.defaultHeaders,
+                ...?headers,
+              },
+              body: json.encode(body),
+            )
+            .timeout(const Duration(seconds: ApiConfig.timeout)),
+        retryIf: (e) => e is http.ClientException || e is TimeoutException,
+        maxAttempts: ApiConfig.maxRetries,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonData = json.decode(response.body) as Map<String, dynamic>;
+        if (fromJson != null) {
+          final data = fromJson(jsonData);
+          return BaseServiceResponse.success(data);
+        }
+        return BaseServiceResponse.success(jsonData as T);
+      }
+
+      return BaseServiceResponse.error(
+        'API Error: ${response.statusCode}',
+        code: response.statusCode,
+      );
+    } catch (e) {
+      return BaseServiceResponse.error('Network Error: $e');
     }
   }
 
-  Future<Map<String, dynamic>> post(
-    String endpoint,
-    Map<String, dynamic> data,
-  ) async {
-    try {
-      final response = await _dio.post(endpoint, data: jsonEncode(data));
-      return response.data;
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
+  @override
+  Future<void> dispose() async {
+    _client.close();
   }
 
-  Exception _handleError(DioException error) {
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return Exception('Connection timed out');
-      case DioExceptionType.badResponse:
-        return Exception(
-          'Server returned ${error.response?.statusCode}: ${error.response?.statusMessage}',
-        );
-      case DioExceptionType.cancel:
-        return Exception('Request cancelled');
-      default:
-        return Exception('Network error occurred');
-    }
+  @override
+  bool get isInitialized => _isInitialized;
+
+  @override
+  Future<void> reset() async {
+    dispose();
+    _isInitialized = false;
+    await initialize();
   }
 
-  void setAuthToken(String token) {
-    _dio.options.headers['Authorization'] = 'Bearer $token';
-  }
-
-  void clearAuthToken() {
-    _dio.options.headers.remove('Authorization');
-  }
+  @override
+  String get serviceName => 'ApiService';
 }

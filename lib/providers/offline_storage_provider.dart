@@ -30,14 +30,11 @@ final storageErrorProvider =
     StateProvider<OfflineStorageException?>((ref) => null);
 
 // Storage state provider
-enum StorageState {
-  initializing,
-  ready,
-  error,
-}
+enum OfflineStorageState { initializing, ready, error }
 
-final storageStateProvider =
-    StateProvider<StorageState>((ref) => StorageState.initializing);
+final storageStateProvider = StateProvider<OfflineStorageState>((ref) {
+  return OfflineStorageState.initializing;
+});
 
 // Initialize storage
 final initializeStorageProvider = FutureProvider<void>((ref) async {
@@ -46,12 +43,12 @@ final initializeStorageProvider = FutureProvider<void>((ref) async {
   final storageError = ref.watch(storageErrorProvider.notifier);
 
   try {
-    storageState.state = StorageState.initializing;
+    storageState.state = OfflineStorageState.initializing;
     await storage.initialize();
-    storageState.state = StorageState.ready;
+    storageState.state = OfflineStorageState.ready;
     storageError.state = null;
   } on OfflineStorageException catch (e) {
-    storageState.state = StorageState.error;
+    storageState.state = OfflineStorageState.error;
     storageError.state = e;
     rethrow;
   }

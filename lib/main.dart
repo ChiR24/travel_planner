@@ -2,34 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:travel_planner_2/ui/screens/home_screen.dart';
-import 'package:travel_planner_2/ui/screens/plan_screen.dart';
-import 'package:travel_planner_2/ui/screens/itinerary_details_screen.dart';
-import 'package:travel_planner_2/ui/screens/my_itineraries_screen.dart';
-import 'package:travel_planner_2/ui/screens/service_metrics_screen.dart';
-import 'package:travel_planner_2/ui/screens/theme_settings_screen.dart';
-import 'package:travel_planner_2/ui/screens/notification_settings_screen.dart';
-import 'package:travel_planner_2/ui/screens/settings_screen.dart';
-import 'package:travel_planner_2/ui/screens/trip_management_screen.dart';
-import 'package:travel_planner_2/ui/screens/about_screen.dart';
-import 'package:travel_planner_2/providers/storage_provider.dart';
-import 'package:travel_planner_2/providers/config_provider.dart';
-import 'package:travel_planner_2/providers/theme_provider.dart';
-import 'package:travel_planner_2/providers/notification_provider.dart';
-import 'package:travel_planner_2/services/config_service.dart';
-import 'package:travel_planner_2/services/notification_service.dart';
-import 'package:travel_planner_2/theme/app_theme.dart';
-import 'package:travel_planner_2/services/offline_storage_service.dart';
+import 'ui/screens/home_screen.dart';
+import 'ui/screens/plan_screen.dart';
+import 'ui/screens/itinerary_details_screen.dart';
+import 'ui/screens/my_itineraries_screen.dart';
+import 'ui/screens/service_metrics_screen.dart';
+import 'ui/screens/theme_settings_screen.dart';
+import 'ui/screens/notification_settings_screen.dart';
+import 'ui/screens/settings_screen.dart';
+import 'ui/screens/trip_management_screen.dart';
+import 'ui/screens/about_screen.dart';
+import 'ui/screens/splash_screen.dart';
+import 'providers/storage_provider.dart';
+import 'providers/config_provider.dart';
+import 'providers/theme_provider.dart';
+import 'providers/notification_provider.dart';
+import 'services/config_service.dart';
+import 'services/notification_service.dart';
+import 'theme/app_theme.dart';
+import 'services/offline_storage_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'providers/offline_storage_provider.dart';
 import 'providers/trip_management_provider.dart';
 import 'services/trip_management_service.dart';
+import 'providers/theme_settings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  runApp(const ProviderScope(child: MyApp()));
+}
 
-  // Initialize services
+final initializationProvider = FutureProvider<void>((ref) async {
+  // Initialize SharedPreferences first
   final prefs = await SharedPreferences.getInstance();
+  ref.read(storageProvider.notifier).initialize(prefs);
+
+  // Initialize other services
   final configService = ConfigService();
   await configService.initialize();
 
@@ -37,6 +45,7 @@ void main() async {
   final connectivity = Connectivity();
   final isOffline =
       await connectivity.checkConnectivity() == ConnectivityResult.none;
+  ref.read(isOfflineProvider.notifier).state = isOffline;
 
   // Initialize notification service
   final notificationService = NotificationService();
@@ -46,39 +55,139 @@ void main() async {
   final tripManagementService = TripManagementService();
   await tripManagementService.initialize();
 
-  runApp(
-    ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        configServiceProvider.overrideWithValue(configService),
-        isOfflineProvider.overrideWith((ref) => isOffline),
-        notificationServiceProvider.overrideWithValue(notificationService),
-        tripManagementServiceProvider.overrideWithValue(tripManagementService),
-      ],
-      child: const TravelPlannerApp(),
-    ),
-  );
+  // Simulate additional loading time for splash screen
+  await Future.delayed(const Duration(seconds: 2));
+});
+
+// Service providers
+final configServiceProvider = Provider<ConfigService>((ref) => ConfigService());
+final notificationServiceProvider =
+    Provider<NotificationService>((ref) => NotificationService());
+final tripManagementServiceProvider =
+    Provider<TripManagementService>((ref) => TripManagementService());
+
+class MyApp extends ConsumerWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final initialization = ref.watch(initializationProvider);
+    final themeMode = ref.watch(effectiveThemeModeProvider);
+    final theme = ref.watch(effectiveThemeProvider);
+
+    return MaterialApp.router(
+      routerConfig: _router,
+      title: 'Travel Planner',
+      debugShowCheckedModeBanner: false,
+      theme: theme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
+      builder: (context, child) {
+        return initialization.when(
+          data: (_) => child ?? const SizedBox.shrink(),
+          loading: () => const SplashScreen(),
+          error: (error, stack) => Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: Colors.red,
+                    size: 48,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error: $error',
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 final _router = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const HomeScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const HomeScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+            child: child,
+          );
+        },
+      ),
     ),
     GoRoute(
       path: '/plan',
-      builder: (context, state) => const PlanScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const PlanScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            )),
+            child: child,
+          );
+        },
+      ),
     ),
     GoRoute(
       path: '/itinerary/:id',
-      builder: (context, state) => ItineraryDetailsScreen(
-        itineraryId: state.pathParameters['id']!,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: ItineraryDetailsScreen(
+          itineraryId: state.pathParameters['id']!,
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.3, 0.0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOut,
+              )),
+              child: child,
+            ),
+          );
+        },
       ),
     ),
     GoRoute(
       path: '/my-itineraries',
-      builder: (context, state) => const MyItinerariesScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const MyItinerariesScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.1),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
+      ),
     ),
     GoRoute(
       path: '/metrics',
@@ -86,7 +195,22 @@ final _router = GoRouter(
     ),
     GoRoute(
       path: '/settings',
-      builder: (context, state) => const SettingsScreen(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const SettingsScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            )),
+            child: child,
+          );
+        },
+      ),
     ),
     GoRoute(
       path: '/settings/theme',
@@ -105,6 +229,40 @@ final _router = GoRouter(
       builder: (context, state) => const TripManagementScreen(),
     ),
   ],
+  errorPageBuilder: (context, state) => CustomTransitionPage(
+    key: state.pageKey,
+    child: Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              color: Colors.red,
+              size: 48,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Page not found: ${state.error}',
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => context.go('/'),
+              child: const Text('Go Home'),
+            ),
+          ],
+        ),
+      ),
+    ),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: animation,
+        child: child,
+      );
+    },
+  ),
 );
 
 class TravelPlannerApp extends ConsumerStatefulWidget {
@@ -127,11 +285,12 @@ class _TravelPlannerAppState extends ConsumerState<TravelPlannerApp> {
 
   @override
   Widget build(BuildContext context) {
-    final storageState = ref.watch(storageStateProvider);
+    final storageState = ref.watch(storageProvider);
     final theme = ref.watch(effectiveThemeProvider);
     final themeMode = ref.watch(effectiveThemeModeProvider);
+    final settings = ref.watch(themeSettingsProvider);
 
-    if (storageState == StorageState.initializing) {
+    if (!storageState.isInitialized) {
       return MaterialApp(
         title: 'Travel Planner',
         theme: theme,
@@ -140,8 +299,7 @@ class _TravelPlannerAppState extends ConsumerState<TravelPlannerApp> {
         builder: (context, child) {
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(
-              textScaler:
-                  TextScaler.linear(ref.watch(themeProvider).textScaleFactor),
+              textScaler: TextScaler.linear(settings.textScaleFactor),
             ),
             child: child ?? const SizedBox.shrink(),
           );
@@ -154,6 +312,46 @@ class _TravelPlannerAppState extends ConsumerState<TravelPlannerApp> {
       );
     }
 
+    if (storageState.error != null) {
+      return MaterialApp(
+        title: 'Travel Planner',
+        theme: theme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeMode,
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(settings.textScaleFactor),
+            ),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+        home: Scaffold(
+          body: Center(
+            child: Text('Error initializing storage: ${storageState.error}'),
+          ),
+        ),
+      );
+    }
+
+    // Monitor storage state
+    ref.listen<StorageState>(storageProvider, (previous, current) {
+      if (current.error != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Storage error: ${current.error}'),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: () {
+                // Add retry logic here if needed
+              },
+            ),
+          ),
+        );
+      }
+    });
+
     return MaterialApp.router(
       routerConfig: _router,
       title: 'Travel Planner',
@@ -164,8 +362,7 @@ class _TravelPlannerAppState extends ConsumerState<TravelPlannerApp> {
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            textScaler:
-                TextScaler.linear(ref.watch(themeProvider).textScaleFactor),
+            textScaler: TextScaler.linear(settings.textScaleFactor),
           ),
           child: _AppBuilder(child: child),
         );
@@ -178,6 +375,26 @@ class _AppBuilder extends ConsumerWidget {
   final Widget? child;
 
   const _AppBuilder({this.child});
+
+  void showErrorDialog({
+    required BuildContext context,
+    required String title,
+    required String message,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -202,21 +419,13 @@ class _AppBuilder extends ConsumerWidget {
     });
 
     // Monitor storage state
-    ref.listen<StorageState>(storageStateProvider, (previous, current) {
-      if (current == StorageState.error) {
-        final error = ref.read(storageErrorProvider);
-        if (error != null && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Storage error: ${error.message}'),
-              duration: const Duration(seconds: 5),
-              action: SnackBarAction(
-                label: 'Retry',
-                onPressed: () => ref.read(initializeStorageProvider.future),
-              ),
-            ),
-          );
-        }
+    ref.listen<StorageState>(storageProvider, (previous, current) {
+      if (current.error != null) {
+        showErrorDialog(
+          context: context,
+          title: 'Storage Error',
+          message: current.error!,
+        );
       }
     });
 

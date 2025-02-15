@@ -51,6 +51,44 @@ class AppTheme {
   static const _shortAnimation = Duration(milliseconds: 200);
   static const _mediumAnimation = Duration(milliseconds: 300);
 
+  // Animation durations
+  static const Duration quickAnimation = Duration(milliseconds: 200);
+  static const Duration normalAnimation = Duration(milliseconds: 300);
+  static const Duration slowAnimation = Duration(milliseconds: 500);
+
+  // Haptic feedback settings
+  static const bool enableHapticFeedback = true;
+  static const Duration hapticFeedbackInterval = Duration(milliseconds: 50);
+
+  // Accessibility settings
+  static const double minTextScaleFactor = 0.8;
+  static const double maxTextScaleFactor = 1.4;
+  static const double textScaleFactorStep = 0.1;
+
+  // Spacing and layout constants
+  static const double spacing_2xs = 4.0;
+  static const double spacing_xs = 8.0;
+  static const double spacing_sm = 12.0;
+  static const double spacing_md = 16.0;
+  static const double spacing_lg = 24.0;
+  static const double spacing_xl = 32.0;
+  static const double spacing_2xl = 48.0;
+
+  // Border radius constants
+  static const double radius_sm = 4.0;
+  static const double radius_md = 8.0;
+  static const double radius_lg = 12.0;
+  static const double radius_xl = 16.0;
+  static const double radius_2xl = 24.0;
+
+  // Elevation constants
+  static const double elevation_none = 0.0;
+  static const double elevation_xs = 2.0;
+  static const double elevation_sm = 4.0;
+  static const double elevation_md = 8.0;
+  static const double elevation_lg = 16.0;
+  static const double elevation_xl = 24.0;
+
   // Text Styles
   static TextTheme _buildTextTheme(ColorScheme colorScheme) {
     return GoogleFonts.poppinsTextTheme().copyWith(
@@ -178,9 +216,9 @@ class AppTheme {
 
       // Card Theme
       cardTheme: CardTheme(
-        elevation: _cardElevation,
+        elevation: elevation_xs,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_cardRadius),
+          borderRadius: BorderRadius.circular(radius_xl),
         ),
         clipBehavior: Clip.antiAlias,
         color: colorScheme.surface,
@@ -190,23 +228,23 @@ class AppTheme {
       // Button Themes
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          elevation: _buttonElevation,
+          elevation: elevation_none,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_buttonRadius),
+            borderRadius: BorderRadius.circular(radius_lg),
           ),
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           textStyle: textTheme.labelLarge,
           minimumSize: const Size(88, 48),
-          animationDuration: _shortAnimation,
+          animationDuration: quickAnimation,
         ).copyWith(
           elevation: MaterialStateProperty.resolveWith<double>(
             (Set<MaterialState> states) {
               if (states.contains(MaterialState.pressed)) {
-                return _buttonPressedElevation;
+                return elevation_sm;
               }
-              return _buttonElevation;
+              return elevation_none;
             },
           ),
         ),
@@ -217,7 +255,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(_buttonRadius),
+            borderRadius: BorderRadius.circular(radius_lg),
           ),
           foregroundColor: colorScheme.primary,
           textStyle: textTheme.labelLarge?.copyWith(
@@ -233,23 +271,23 @@ class AppTheme {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_inputRadius),
+          borderRadius: BorderRadius.circular(radius_lg),
           borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_inputRadius),
+          borderRadius: BorderRadius.circular(radius_lg),
           borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_inputRadius),
+          borderRadius: BorderRadius.circular(radius_lg),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_inputRadius),
+          borderRadius: BorderRadius.circular(radius_lg),
           borderSide: BorderSide(color: colorScheme.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(_inputRadius),
+          borderRadius: BorderRadius.circular(radius_lg),
           borderSide: BorderSide(color: colorScheme.error, width: 2),
         ),
         labelStyle: textTheme.bodyMedium,
@@ -303,42 +341,80 @@ class AppTheme {
         actionTextColor: colorScheme.primary,
       ),
 
-      // Dialog Theme
-      dialogTheme: DialogTheme(
-        backgroundColor: colorScheme.surface,
-        elevation: _cardElevation,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(_cardRadius),
-        ),
+      // Page transitions
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
       ),
 
-      // Bottom Sheet Theme
+      // Scrolling physics
+      scrollbarTheme: ScrollbarThemeData(
+        thickness: MaterialStateProperty.all(8.0),
+        thumbColor: MaterialStateProperty.all(
+          colorScheme.onSurface.withOpacity(0.4),
+        ),
+        radius: const Radius.circular(radius_sm),
+        crossAxisMargin: 2,
+      ),
+
+      // Tooltip theme
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(radius_md),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.shadow.withOpacity(0.1),
+              blurRadius: elevation_xs,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        textStyle: textTheme.bodySmall?.copyWith(
+          color: colorScheme.onSurface,
+        ),
+        waitDuration: const Duration(milliseconds: 500),
+        showDuration: const Duration(milliseconds: 3000),
+      ),
+
+      // Bottom sheet theme
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: colorScheme.surface,
-        elevation: _cardElevation,
-        shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(_cardRadius)),
+        modalBackgroundColor: colorScheme.surface,
+        elevation: elevation_md,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(radius_xl),
+          ),
         ),
-        modalElevation: _cardElevation * 2,
+        clipBehavior: Clip.antiAlias,
       ),
 
-      // Divider Theme
-      dividerTheme: DividerThemeData(
-        color: colorScheme.outline.withOpacity(0.2),
-        thickness: 1,
-        space: 24,
+      // Dialog theme
+      dialogTheme: DialogTheme(
+        backgroundColor: colorScheme.surface,
+        elevation: elevation_lg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius_lg),
+        ),
       ),
 
-      // List Tile Theme
-      listTileTheme: ListTileThemeData(
-        tileColor: colorScheme.surface,
-        selectedTileColor: colorScheme.primary.withOpacity(0.1),
-        iconColor: colorScheme.onSurface,
-        textColor: colorScheme.onSurface,
-        selectedColor: colorScheme.primary,
-        minLeadingWidth: 24,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      // Navigation bar theme
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: colorScheme.surface,
+        elevation: elevation_sm,
+        height: 80,
+        labelTextStyle: MaterialStateProperty.all(
+          textTheme.labelMedium,
+        ),
+        iconTheme: MaterialStateProperty.resolveWith((states) {
+          if (states.contains(MaterialState.selected)) {
+            return IconThemeData(color: colorScheme.primary);
+          }
+          return IconThemeData(color: colorScheme.onSurface);
+        }),
       ),
     );
   }

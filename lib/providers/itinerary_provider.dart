@@ -4,6 +4,7 @@ import '../services/itinerary_service.dart';
 import '../services/storage_service.dart';
 import 'storage_provider.dart';
 import 'config_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final itineraryServiceProvider = Provider<ItineraryService>((ref) {
   final geminiApiKey = ref.watch(geminiApiKeyProvider).when(
@@ -17,8 +18,8 @@ final itineraryServiceProvider = Provider<ItineraryService>((ref) {
 // Provider to store all itineraries
 final itinerariesProvider =
     StateNotifierProvider<ItinerariesNotifier, List<Itinerary>>((ref) {
-  final storageService = ref.watch(storageServiceProvider);
-  return ItinerariesNotifier(storageService);
+  final storageState = ref.watch(storageProvider);
+  return ItinerariesNotifier(storageState);
 });
 
 // Provider to fetch a specific itinerary by ID
@@ -93,41 +94,47 @@ final generationProvider =
 });
 
 class ItinerariesNotifier extends StateNotifier<List<Itinerary>> {
-  final StorageService _storageService;
+  final StorageState _storageState;
 
-  ItinerariesNotifier(this._storageService) : super([]) {
-    // Load saved itineraries when initialized
-    _loadItineraries();
+  ItinerariesNotifier(this._storageState) : super([]) {
+    if (_storageState.isInitialized && _storageState.service != null) {
+      _loadItineraries();
+    }
   }
 
   Future<void> _loadItineraries() async {
-    final itineraries = await _storageService.loadItineraries();
+    if (_storageState.service == null) return;
+    final itineraries = await _storageState.service!.loadItineraries();
     state = itineraries;
   }
 
   Future<void> addItinerary(Itinerary itinerary) async {
+    if (_storageState.service == null) return;
     state = [...state, itinerary];
-    await _storageService.saveItineraries(state);
+    await _storageState.service!.saveItineraries(state);
   }
 
   Future<void> removeItinerary(String id) async {
+    if (_storageState.service == null) return;
     state = state.where((itinerary) => itinerary.id != id).toList();
-    await _storageService.saveItineraries(state);
+    await _storageState.service!.saveItineraries(state);
   }
 
   Future<void> updateItinerary(Itinerary updatedItinerary) async {
+    if (_storageState.service == null) return;
     state = state.map((itinerary) {
       if (itinerary.id == updatedItinerary.id) {
         return updatedItinerary;
       }
       return itinerary;
     }).toList();
-    await _storageService.saveItineraries(state);
+    await _storageState.service!.saveItineraries(state);
   }
 
   Future<void> clearItineraries() async {
+    if (_storageState.service == null) return;
     state = [];
-    await _storageService.clearItineraries();
+    await _storageState.service!.clearItineraries();
   }
 }
 
