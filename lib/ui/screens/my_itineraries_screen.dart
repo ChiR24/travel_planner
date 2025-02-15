@@ -14,7 +14,14 @@ class MyItinerariesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Itineraries'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
+        title: Text(
+          'My Itineraries',
+          style: GoogleFonts.poppins(),
+        ),
       ),
       body: itineraries.isEmpty
           ? _buildEmptyState(context)

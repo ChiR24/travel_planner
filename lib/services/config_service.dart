@@ -1,10 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/api_config.dart';
 
 class ConfigService {
-  static const String _geminiApiKey = 'GEMINI_API_KEY';
-  static const String _googleMapsApiKey = 'Your_Api_Key';
-  static const String _weatherApiKey = 'WEATHER_API_KEY';
-
   final FlutterSecureStorage _storage;
 
   ConfigService({FlutterSecureStorage? storage})
@@ -12,72 +9,66 @@ class ConfigService {
 
   Future<void> initialize() async {
     // Check if keys are already stored
-    final hasGeminiKey = await _storage.containsKey(key: _geminiApiKey);
-    final hasGoogleMapsKey = await _storage.containsKey(key: _googleMapsApiKey);
-    final hasWeatherKey = await _storage.containsKey(key: _weatherApiKey);
+    final hasGeminiKey =
+        await _storage.containsKey(key: ApiConfig.geminiKeyName);
+    final hasGoogleMapsKey =
+        await _storage.containsKey(key: ApiConfig.googleMapsKeyName);
+    final hasWeatherKey =
+        await _storage.containsKey(key: ApiConfig.weatherKeyName);
 
     // Store keys if not present
     if (!hasGeminiKey) {
       await _storage.write(
-        key: _geminiApiKey,
-        value: 'Your_Api_Key',
+        key: ApiConfig.geminiKeyName,
+        value: ApiConfig.geminiApiKey,
       );
     }
 
     if (!hasGoogleMapsKey) {
       await _storage.write(
-        key: _googleMapsApiKey,
-        value: 'Your_Api_Key',
+        key: ApiConfig.googleMapsKeyName,
+        value: ApiConfig.googleMapsApiKey,
       );
     }
 
     if (!hasWeatherKey) {
       await _storage.write(
-        key: _weatherApiKey,
-        value: '8d9e8935c5b6f0e7c5f83d4c6d62e282', // OpenWeatherMap API key
+        key: ApiConfig.weatherKeyName,
+        value: ApiConfig.weatherApiKey,
       );
     }
   }
 
   Future<String?> getGeminiApiKey() async {
-    return _storage.read(key: _geminiApiKey);
+    return _storage.read(key: ApiConfig.geminiKeyName);
   }
 
   Future<String?> getGoogleMapsApiKey() async {
-    return _storage.read(key: _googleMapsApiKey);
+    return _storage.read(key: ApiConfig.googleMapsKeyName);
   }
 
   Future<String?> getWeatherApiKey() async {
-    return _storage.read(key: _weatherApiKey);
+    return _storage.read(key: ApiConfig.weatherKeyName);
   }
 
   Future<void> setGeminiApiKey(String apiKey) async {
-    await _storage.write(key: _geminiApiKey, value: apiKey);
+    await _storage.write(key: ApiConfig.geminiKeyName, value: apiKey);
   }
 
   Future<void> setGoogleMapsApiKey(String apiKey) async {
-    await _storage.write(key: _googleMapsApiKey, value: apiKey);
+    await _storage.write(key: ApiConfig.googleMapsKeyName, value: apiKey);
   }
 
   Future<void> setWeatherApiKey(String apiKey) async {
-    await _storage.write(key: _weatherApiKey, value: apiKey);
+    await _storage.write(key: ApiConfig.weatherKeyName, value: apiKey);
   }
 
   Future<void> clearAll() async {
     await _storage.deleteAll();
   }
 
-  // Get the Google Maps API key
-  static String get googleMapsApiKey => _googleMapsApiKey;
-
   // Validate configuration
   static bool validateConfig() {
-    if (_googleMapsApiKey.isEmpty ||
-        _googleMapsApiKey == 'GOOGLE_MAPS_API_KEY') {
-      print('WARNING: Google Maps API key is not configured.');
-      print('Please update the _googleMapsApiKey in config_service.dart');
-      return false;
-    }
-    return true;
+    return ApiConfig.validateKeys();
   }
 }

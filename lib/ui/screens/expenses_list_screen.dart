@@ -256,7 +256,10 @@ class ExpensesListScreen extends ConsumerWidget {
   Future<void> _addExpense(BuildContext context, WidgetRef ref) async {
     final expense = await showDialog<Expense>(
       context: context,
-      builder: (context) => AddExpenseDialog(currency: budget.currency),
+      builder: (context) => AddExpenseDialog(
+        currency: budget.currency,
+        budgetId: budget.id,
+      ),
     );
 
     if (expense != null) {

@@ -1,4 +1,5 @@
 import 'package:travel_planner_2/models/destination.dart';
+import 'activity_category.dart';
 
 class ItineraryStop {
   final Destination destination;
@@ -126,12 +127,18 @@ class Activity {
   final String description;
   final DateTime startTime;
   final DateTime endTime;
+  final ActivityCategory category;
+  final List<String> tags;
+  final Map<String, dynamic> metadata;
 
   Activity({
     required this.name,
     required this.description,
     required this.startTime,
     required this.endTime,
+    this.category = ActivityCategory.other,
+    this.tags = const [],
+    this.metadata = const {},
   });
 
   factory Activity.fromJson(Map<String, dynamic> json) {
@@ -140,6 +147,9 @@ class Activity {
       description: json['description'] as String,
       startTime: DateTime.parse(json['startTime'] as String),
       endTime: DateTime.parse(json['endTime'] as String),
+      category: ActivityCategory.fromString(json['category'] as String? ?? ''),
+      tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
+      metadata: json['metadata'] as Map<String, dynamic>? ?? {},
     );
   }
 
@@ -149,6 +159,52 @@ class Activity {
       'description': description,
       'startTime': startTime.toIso8601String(),
       'endTime': endTime.toIso8601String(),
+      'category': category.toString(),
+      'tags': tags,
+      'metadata': metadata,
     };
+  }
+
+  Activity copyWith({
+    String? name,
+    String? description,
+    DateTime? startTime,
+    DateTime? endTime,
+    ActivityCategory? category,
+    List<String>? tags,
+    Map<String, dynamic>? metadata,
+  }) {
+    return Activity(
+      name: name ?? this.name,
+      description: description ?? this.description,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      category: category ?? this.category,
+      tags: tags ?? this.tags,
+      metadata: metadata ?? this.metadata,
+    );
+  }
+
+  Duration get duration => endTime.difference(startTime);
+
+  bool hasTag(String tag) => tags.contains(tag.toLowerCase());
+
+  Activity addTag(String tag) {
+    if (!hasTag(tag)) {
+      return copyWith(tags: [...tags, tag.toLowerCase()]);
+    }
+    return this;
+  }
+
+  Activity removeTag(String tag) {
+    return copyWith(
+      tags: tags.where((t) => t != tag.toLowerCase()).toList(),
+    );
+  }
+
+  Activity updateMetadata(String key, dynamic value) {
+    return copyWith(
+      metadata: {...metadata, key: value},
+    );
   }
 }

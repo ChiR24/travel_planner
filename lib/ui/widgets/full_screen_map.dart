@@ -16,7 +16,14 @@ class FullScreenMap extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.poppins(),
+        ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),

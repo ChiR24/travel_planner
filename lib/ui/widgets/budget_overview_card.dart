@@ -225,7 +225,10 @@ class BudgetOverviewCard extends ConsumerWidget {
   ) async {
     final expense = await showDialog<Expense>(
       context: context,
-      builder: (context) => AddExpenseDialog(currency: budget.currency),
+      builder: (context) => AddExpenseDialog(
+        currency: budget.currency,
+        budgetId: budget.id,
+      ),
     );
 
     if (expense != null) {

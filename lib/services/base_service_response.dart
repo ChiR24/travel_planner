@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// Standard error codes for all services
 enum ServiceErrorCode {

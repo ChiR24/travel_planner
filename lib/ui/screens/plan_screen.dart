@@ -33,28 +33,9 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
   };
   final Map<String, String> _customPreferences = {};
 
-  final List<String> _suggestedDestinations = [
-    'Paris',
-    'Barcelona',
-    'Amsterdam',
-    'New York',
-    'Tokyo',
-    'Rome',
-    'London',
-    'Berlin',
-    'Singapore',
-    'Dubai',
-  ];
-
-  Map<String, dynamic>? routeInfo;
-  bool isLoading = false;
-
   @override
   void initState() {
     super.initState();
-    // Start with one destination field
-    _addDestinationField();
-
     // If a destination was passed through navigation, pre-fill it
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final extra = GoRouterState.of(context).extra;
@@ -72,21 +53,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     _originController.dispose();
     _destinationsController.dispose();
     super.dispose();
-  }
-
-  void _addDestinationField() {
-    setState(() {
-      _destinationsController.text += ', ';
-    });
-  }
-
-  void _removeDestinationField(int index) {
-    if (_destinationsController.text.isNotEmpty) {
-      setState(() {
-        _destinationsController.text = _destinationsController.text
-            .substring(0, _destinationsController.text.length - 2);
-      });
-    }
   }
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
@@ -167,29 +133,6 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
     }
   }
 
-  final _suggestionsKey = GlobalKey();
-
-  Widget _buildSuggestions() {
-    if (_originController.text.isEmpty ||
-        _destinationsController.text.isEmpty ||
-        routeInfo == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      key: _suggestionsKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (routeInfo != null) ...[
-            const SizedBox(height: 16),
-            _buildSuggestions(),
-          ],
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final generationState = ref.watch(generationProvider);
@@ -203,160 +146,173 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       }
     });
 
+    if (generationState.isLoading) {
+      return LoadingScreen(
+        destination: _destinationsController.text.split(',').first.trim(),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
         title: Text(
           'Plan Your Trip',
           style: GoogleFonts.poppins(),
         ),
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Trip Details',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _originController,
+                decoration: const InputDecoration(
+                  labelText: 'Starting Point',
+                  hintText: 'Enter your starting location',
+                  prefixIcon: Icon(Icons.location_on),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a starting point';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _destinationsController,
+                decoration: const InputDecoration(
+                  labelText: 'Destinations',
+                  hintText: 'Enter destinations, separated by commas',
+                  prefixIcon: Icon(Icons.place),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter at least one destination';
+                  }
+                  return null;
+                },
+                maxLines: null,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Travel Dates',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
                 children: [
-                  Text(
-                    'Trip Details',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _originController,
-                    decoration: const InputDecoration(
-                      labelText: 'Starting Point',
-                      hintText: 'Enter your starting location',
-                      prefixIcon: Icon(Icons.location_on),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter a starting point';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _destinationsController,
-                    decoration: const InputDecoration(
-                      labelText: 'Destinations',
-                      hintText: 'Enter destinations, separated by commas',
-                      prefixIcon: Icon(Icons.place),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter at least one destination';
-                      }
-                      return null;
-                    },
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Travel Dates',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ListTile(
-                          title: const Text('Start Date'),
-                          subtitle: Text(
-                            _startDate == null
-                                ? 'Not selected'
-                                : '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}',
-                          ),
-                          onTap: () => _selectDate(context, true),
-                          trailing: const Icon(Icons.calendar_today),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _selectDate(context, true),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Start Date',
+                          prefixIcon: Icon(Icons.calendar_today),
+                        ),
+                        child: Text(
+                          _startDate == null
+                              ? 'Select Date'
+                              : '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}',
                         ),
                       ),
-                      Expanded(
-                        child: ListTile(
-                          title: const Text('End Date'),
-                          subtitle: Text(
-                            _endDate == null
-                                ? 'Not selected'
-                                : '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}',
-                          ),
-                          onTap: () => _selectDate(context, false),
-                          trailing: const Icon(Icons.calendar_today),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _selectDate(context, false),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'End Date',
+                          prefixIcon: Icon(Icons.calendar_today),
+                        ),
+                        child: Text(
+                          _endDate == null
+                              ? 'Select Date'
+                              : '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}',
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Preferences',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 0,
-                    children: _preferences.keys.map((preference) {
-                      return FilterChip(
-                        label: Text(preference),
-                        selected: _preferences[preference]!,
-                        onSelected: (selected) {
-                          setState(() {
-                            _preferences[preference] = selected;
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  CustomPreferenceInput(
-                    onPreferenceAdded: _handleCustomPreference,
-                    existingPreferences: _customPreferences,
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed:
-                          generationState.isLoading ? null : _generateItinerary,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: generationState.isLoading
-                            ? const CircularProgressIndicator()
-                            : const Text('Generate Itinerary'),
-                      ),
-                    ),
-                  ),
-                  if (generationState.error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Text(
-                        generationState.error!,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error),
-                      ),
-                    ),
                 ],
               ),
-            ),
+              const SizedBox(height: 24),
+              Text(
+                'Preferences',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _preferences.keys.map((preference) {
+                  return FilterChip(
+                    label: Text(preference),
+                    selected: _preferences[preference]!,
+                    onSelected: (selected) {
+                      setState(() {
+                        _preferences[preference] = selected;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+              CustomPreferenceInput(
+                onPreferenceAdded: _handleCustomPreference,
+                existingPreferences: _customPreferences,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _generateItinerary,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Generate Itinerary',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (generationState.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    generationState.error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+            ],
           ),
-          if (generationState.isLoading)
-            LoadingScreen(
-              destination: _destinationsController.text.isNotEmpty
-                  ? _destinationsController.text
-                  : 'your destination',
-            ),
-        ],
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ class Expense {
   final ExpenseCategory category;
   final DateTime date;
   final String? notes;
+  final String budgetId;
 
   const Expense({
     required this.id,
@@ -14,6 +15,7 @@ class Expense {
     required this.amount,
     required this.category,
     required this.date,
+    required this.budgetId,
     this.notes,
   });
 
@@ -25,6 +27,7 @@ class Expense {
       category: ExpenseCategory.fromString(json['category'] as String),
       date: DateTime.parse(json['date'] as String),
       notes: json['notes'] as String?,
+      budgetId: json['budgetId'] as String,
     );
   }
 
@@ -35,6 +38,7 @@ class Expense {
       'amount': amount,
       'category': category.toString(),
       'date': date.toIso8601String(),
+      'budgetId': budgetId,
       if (notes != null) 'notes': notes,
     };
   }
@@ -46,6 +50,7 @@ class Expense {
     ExpenseCategory? category,
     DateTime? date,
     String? notes,
+    String? budgetId,
   }) {
     return Expense(
       id: id ?? this.id,
@@ -54,6 +59,7 @@ class Expense {
       category: category ?? this.category,
       date: date ?? this.date,
       notes: notes ?? this.notes,
+      budgetId: budgetId ?? this.budgetId,
     );
   }
 }

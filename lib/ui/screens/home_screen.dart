@@ -9,6 +9,18 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Travel Planner',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.go('/settings'),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -56,6 +68,11 @@ class HomeScreen extends ConsumerWidget {
                 onPressed: () => context.go('/metrics'),
                 icon: const Icon(Icons.analytics),
                 label: const Text('Metrics'),
+              ),
+              TextButton.icon(
+                onPressed: () => context.go('/trips'),
+                icon: const Icon(Icons.manage_history),
+                label: const Text('Trip Management'),
               ),
             ],
           ),

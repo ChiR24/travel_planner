@@ -7,10 +7,12 @@ import '../../models/expense_category.dart';
 
 class AddExpenseDialog extends StatefulWidget {
   final String currency;
+  final String budgetId;
 
   const AddExpenseDialog({
     super.key,
     required this.currency,
+    required this.budgetId,
   });
 
   @override
@@ -170,6 +172,7 @@ class _AddExpenseDialogState extends State<AddExpenseDialog> {
         category: _selectedCategory,
         date: _selectedDate,
         notes: _notesController.text.isEmpty ? null : _notesController.text,
+        budgetId: widget.budgetId,
       );
       Navigator.pop(context, expense);
     }

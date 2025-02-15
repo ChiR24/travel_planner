@@ -6,6 +6,7 @@ import '../../providers/metrics_provider.dart';
 import '../../services/service_metrics.dart';
 import '../../services/base_service_response.dart';
 import '../widgets/service_health_dashboard.dart';
+import 'package:go_router/go_router.dart';
 
 class ServiceMetricsScreen extends ConsumerWidget {
   const ServiceMetricsScreen({super.key});
@@ -17,6 +18,10 @@ class ServiceMetricsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
         title: Text(
           'Service Metrics',
           style: GoogleFonts.poppins(),
