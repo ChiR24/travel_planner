@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../models/itinerary.dart';
 import 'base_service.dart';
 
@@ -16,50 +18,119 @@ class TripManagementService implements BaseService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    _tripsBox = await Hive.openBox<String>(_tripsBoxName);
-    _templatesBox = await Hive.openBox<String>(_templatesBoxName);
-    _archiveBox = await Hive.openBox<String>(_archiveBoxName);
+    try {
+      // Ensure boxes are closed before opening them again
+      if (Hive.isBoxOpen(_tripsBoxName)) await Hive.box(_tripsBoxName).close();
+      if (Hive.isBoxOpen(_templatesBoxName))
+        await Hive.box(_templatesBoxName).close();
+      if (Hive.isBoxOpen(_archiveBoxName))
+        await Hive.box(_archiveBoxName).close();
 
-    _isInitialized = true;
+      // Open boxes with retry mechanism
+      _tripsBox = await _openBoxWithRetry<String>(_tripsBoxName);
+      _templatesBox = await _openBoxWithRetry<String>(_templatesBoxName);
+      _archiveBox = await _openBoxWithRetry<String>(_archiveBoxName);
+
+      _isInitialized = true;
+    } catch (e) {
+      print('Error initializing TripManagementService: $e');
+      rethrow;
+    }
+  }
+
+  Future<Box<T>> _openBoxWithRetry<T>(String boxName,
+      {int maxRetries = 3}) async {
+    int attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        if (Hive.isBoxOpen(boxName)) {
+          return Hive.box<T>(boxName);
+        }
+        return await Hive.openBox<T>(boxName);
+      } catch (e) {
+        attempts++;
+        if (attempts == maxRetries) {
+          throw Exception(
+              'Failed to open box $boxName after $maxRetries attempts: $e');
+        }
+        // Wait before retrying
+        await Future.delayed(Duration(milliseconds: 200 * attempts));
+      }
+    }
+    throw Exception('Failed to open box $boxName');
   }
 
   // Trip Templates
   Future<void> saveTemplate(Itinerary template) async {
-    await _templatesBox.put(template.id, template.toJson().toString());
+    try {
+      final jsonString = jsonEncode(template.toJson());
+      await _templatesBox.put(template.id, jsonString);
+    } catch (e) {
+      print('Error saving template: $e');
+      rethrow;
+    }
   }
 
   Future<List<Itinerary>> getTemplates() async {
-    return _templatesBox.values
-        .map((json) => Itinerary.fromJson(json as Map<String, dynamic>))
-        .toList();
+    try {
+      return _templatesBox.values.map((jsonString) {
+        final Map<String, dynamic> json = jsonDecode(jsonString);
+        return Itinerary.fromJson(json);
+      }).toList();
+    } catch (e) {
+      print('Error getting templates: $e');
+      return [];
+    }
   }
 
   Future<void> deleteTemplate(String templateId) async {
-    await _templatesBox.delete(templateId);
+    try {
+      await _templatesBox.delete(templateId);
+    } catch (e) {
+      print('Error deleting template: $e');
+      rethrow;
+    }
   }
 
   // Trip Archive
   Future<void> archiveTrip(Itinerary trip) async {
-    // Remove from active trips
-    await _tripsBox.delete(trip.id);
-    // Add to archive
-    await _archiveBox.put(trip.id, trip.toJson().toString());
+    try {
+      // Remove from active trips
+      await _tripsBox.delete(trip.id);
+      // Add to archive
+      final jsonString = jsonEncode(trip.toJson());
+      await _archiveBox.put(trip.id, jsonString);
+    } catch (e) {
+      print('Error archiving trip: $e');
+      rethrow;
+    }
   }
 
   Future<void> unarchiveTrip(String tripId) async {
-    final tripJson = await _archiveBox.get(tripId);
-    if (tripJson != null) {
-      // Remove from archive
-      await _archiveBox.delete(tripId);
-      // Add back to active trips
-      await _tripsBox.put(tripId, tripJson);
+    try {
+      final tripJsonString = await _archiveBox.get(tripId);
+      if (tripJsonString != null) {
+        // Remove from archive
+        await _archiveBox.delete(tripId);
+        // Add back to active trips
+        await _tripsBox.put(tripId, tripJsonString);
+      }
+    } catch (e) {
+      print('Error unarchiving trip: $e');
+      rethrow;
     }
   }
 
   Future<List<Itinerary>> getArchivedTrips() async {
-    return _archiveBox.values
-        .map((json) => Itinerary.fromJson(json as Map<String, dynamic>))
-        .toList();
+    try {
+      return _archiveBox.values.map((jsonString) {
+        final Map<String, dynamic> json = jsonDecode(jsonString);
+        return Itinerary.fromJson(json);
+      }).toList();
+    } catch (e) {
+      print('Error getting archived trips: $e');
+      return [];
+    }
   }
 
   // Trip Statistics
@@ -122,17 +193,34 @@ class TripManagementService implements BaseService {
 
   // Active Trips
   Future<List<Itinerary>> getTrips() async {
-    return _tripsBox.values
-        .map((json) => Itinerary.fromJson(json as Map<String, dynamic>))
-        .toList();
+    try {
+      return _tripsBox.values.map((jsonString) {
+        final Map<String, dynamic> json = jsonDecode(jsonString);
+        return Itinerary.fromJson(json);
+      }).toList();
+    } catch (e) {
+      print('Error getting trips: $e');
+      return [];
+    }
   }
 
   Future<void> saveTrip(Itinerary trip) async {
-    await _tripsBox.put(trip.id, trip.toJson().toString());
+    try {
+      final jsonString = jsonEncode(trip.toJson());
+      await _tripsBox.put(trip.id, jsonString);
+    } catch (e) {
+      print('Error saving trip: $e');
+      rethrow;
+    }
   }
 
   Future<void> deleteTrip(String tripId) async {
-    await _tripsBox.delete(tripId);
+    try {
+      await _tripsBox.delete(tripId);
+    } catch (e) {
+      print('Error deleting trip: $e');
+      rethrow;
+    }
   }
 
   @override

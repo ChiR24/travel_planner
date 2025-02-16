@@ -7,482 +7,782 @@ import '../widgets/shimmer_loading.dart';
 
 final _isLoadingProvider = StateProvider<bool>((ref) => true);
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(_isLoadingProvider);
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with SingleTickerProviderStateMixin {
+  late ScrollController _scrollController;
+  bool _showTitle = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController()
+      ..addListener(() {
+        setState(() {
+          _showTitle = _scrollController.offset > 140;
+        });
+      });
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    );
+
+    _animationController.forward();
 
     // Simulate data loading
     Future.delayed(const Duration(seconds: 2), () {
-      if (context.mounted) {
+      if (mounted) {
         ref.read(_isLoadingProvider.notifier).state = false;
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLoading = ref.watch(_isLoadingProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Travel Planner',
-          style: GoogleFonts.poppins(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.go('/settings'),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              _buildHeroSection(context),
-              _buildQuickActions(context),
-              ShimmerLoading(
-                isLoading: isLoading,
-                child: _buildFeaturedDestinations(context),
-              ),
-              ShimmerLoading(
-                isLoading: isLoading,
-                child: _buildPopularItineraries(context),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Travel Planner',
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildActionButton(
-                  context,
-                  icon: Icons.add,
-                  label: 'Plan Trip',
-                  onTap: () => context.go('/plan'),
-                ),
-                _buildActionButton(
-                  context,
-                  icon: Icons.map_outlined,
-                  label: 'My Trips',
-                  onTap: () => context.go('/my-itineraries'),
-                ),
-                _buildActionButton(
-                  context,
-                  icon: Icons.analytics,
-                  label: 'Metrics',
-                  onTap: () => context.go('/metrics'),
-                ),
-                _buildActionButton(
-                  context,
-                  icon: Icons.manage_history,
-                  label: 'Trip Management',
-                  onTap: () => context.go('/trips'),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InteractiveCard(
-        onTap: onTap,
-        elevation: 0,
-        pressedElevation: 2,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                label,
+      body: CustomScrollView(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // Custom App Bar
+          SliverAppBar(
+            expandedHeight: 250,
+            floating: false,
+            pinned: true,
+            backgroundColor: colorScheme.surface,
+            elevation: _showTitle ? 4 : 0,
+            title: AnimatedOpacity(
+              opacity: _showTitle ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                'Travel Planner',
                 style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
+              ),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Hero(
+                    tag: 'hero_image',
+                    child: Image.network(
+                      'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1200',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          colorScheme.surface.withOpacity(0.8),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 16,
+                    left: 16,
+                    right: 16,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Travel Planner',
+                            style: GoogleFonts.poppins(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            'Plan your next adventure',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              color: Colors.white.withOpacity(0.9),
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  offset: const Offset(0, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: () {
+                  // TODO: Implement search
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Search coming soon!')),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () => context.go('/settings'),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildHeroSection(BuildContext context) {
-    return InteractiveCard(
-      onTap: () => context.go('/plan'),
-      elevation: 4,
-      pressedElevation: 8,
-      child: Container(
-        height: 400,
-        width: double.infinity,
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          image: const DecorationImage(
-            image: NetworkImage(
-              'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1200',
-            ),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-              Colors.black38,
-              BlendMode.darken,
+          // Quick Actions Grid
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 1.1,
+              ),
+              delegate: SliverChildListDelegate([
+                _buildQuickActionCard(
+                  context,
+                  title: 'Plan Trip',
+                  subtitle: 'Create new itinerary',
+                  icon: Icons.add_road,
+                  color: colorScheme.primary,
+                  onTap: () => context.go('/plan'),
+                  isLoading: isLoading,
+                ),
+                _buildQuickActionCard(
+                  context,
+                  title: 'My Trips',
+                  subtitle: 'View saved itineraries',
+                  icon: Icons.map_outlined,
+                  color: colorScheme.secondary,
+                  onTap: () => context.go('/my-itineraries'),
+                  isLoading: isLoading,
+                ),
+                _buildQuickActionCard(
+                  context,
+                  title: 'Metrics',
+                  subtitle: 'Travel statistics',
+                  icon: Icons.analytics_outlined,
+                  color: colorScheme.tertiary,
+                  onTap: () => context.go('/metrics'),
+                  isLoading: isLoading,
+                ),
+                _buildQuickActionCard(
+                  context,
+                  title: 'Trip Management',
+                  subtitle: 'Organize your travels',
+                  icon: Icons.manage_history,
+                  color: colorScheme.error,
+                  onTap: () => context.go('/trips'),
+                  isLoading: isLoading,
+                ),
+              ]),
             ),
           ),
-        ),
-        child: Stack(
-          children: [
-            Center(
+
+          // Featured Destinations
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Plan Your Journey',
-                    style: GoogleFonts.poppins(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  ShimmerLoading(
+                    isLoading: isLoading,
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width - 32,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.place,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Flexible(
+                                  child: Text(
+                                    'Featured Destinations',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.arrow_forward, size: 18),
+                            label: const Text('See All'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Discover amazing destinations and create\nperfect travel itineraries',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      color: Colors.white,
+                  SizedBox(
+                    height: 220,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      children: [
+                        _buildDestinationCard(
+                          context,
+                          image:
+                              'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600',
+                          name: 'Paris',
+                          description: 'The City of Light',
+                          rating: 4.8,
+                          isLoading: isLoading,
+                        ),
+                        _buildDestinationCard(
+                          context,
+                          image:
+                              'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=600',
+                          name: 'Barcelona',
+                          description: 'Heart of Catalonia',
+                          rating: 4.7,
+                          isLoading: isLoading,
+                        ),
+                        _buildDestinationCard(
+                          context,
+                          image:
+                              'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=600',
+                          name: 'Amsterdam',
+                          description: 'Venice of the North',
+                          rating: 4.6,
+                          isLoading: isLoading,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () => context.go('/plan'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      backgroundColor: Colors.white,
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                    ),
-                    child: const Text('Start Planning'),
                   ),
                 ],
               ),
             ),
-          ],
+          ),
+
+          // Popular Itineraries
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShimmerLoading(
+                    isLoading: isLoading,
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width -
+                          32, // Account for padding
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        colorScheme.secondary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.route,
+                                    color: colorScheme.secondary,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Flexible(
+                                  child: Text(
+                                    'Popular Itineraries',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => context.go('/my-itineraries'),
+                            icon: const Icon(Icons.arrow_forward, size: 18),
+                            label: const Text('See All'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildItineraryCard(
+                    context,
+                    title: 'European Classics',
+                    subtitle: '10 days in Paris, Barcelona, and Amsterdam',
+                    description:
+                        'Art, culture, and cuisine across Europe\'s most iconic cities',
+                    image:
+                        'https://images.unsplash.com/photo-1471623432079-b009d30b6729?w=600',
+                    rating: 4.9,
+                    price: '€2,499',
+                    isLoading: isLoading,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildItineraryCard(
+                    context,
+                    title: 'Cultural Capitals',
+                    subtitle: '12 days in New York, London, and Paris',
+                    description:
+                        'Experience the world\'s most vibrant metropolitan cities',
+                    image:
+                        'https://images.unsplash.com/photo-1522083165195-3424ed129620?w=600',
+                    rating: 4.8,
+                    price: '€2,899',
+                    isLoading: isLoading,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.go('/plan'),
+        icon: const Icon(Icons.add),
+        label: Text(
+          'Plan New Trip',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
-    final actions = [
-      ('Find Flights', Icons.flight),
-      ('Hotels', Icons.hotel),
-      ('Activities', Icons.local_activity),
-      ('Restaurants', Icons.restaurant),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: actions.map((action) {
-          return InteractiveCard(
-            onTap: () {},
-            elevation: 2,
-            pressedElevation: 6,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Icon(
-                    action.$2,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: 32,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    action.$1,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+  Widget _buildQuickActionCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    required bool isLoading,
+  }) {
+    return ShimmerLoading(
+      isLoading: isLoading,
+      child: InteractiveCard(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withOpacity(0.15),
+                color.withOpacity(0.05),
+              ],
             ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildFeaturedDestinations(BuildContext context) {
-    final destinations = [
-      (
-        'Paris',
-        'The City of Light',
-        'Experience world-class art, cuisine, and romance',
-        'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600'
-      ),
-      (
-        'Barcelona',
-        'The Heart of Catalonia',
-        'Gaudi\'s architecture, tapas, and Mediterranean charm',
-        'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=600'
-      ),
-      (
-        'Amsterdam',
-        'Venice of the North',
-        'Historic canals, world-class museums, and cycling culture',
-        'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=600'
-      ),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: color.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                'Featured Destinations',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
+                child: Icon(icon, color: color, size: 32),
               ),
-              TextButton(
-                onPressed: () {},
-                child: const Text('See All'),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                subtitle,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: color.withOpacity(0.8),
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
-        SizedBox(
-          height: 300,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: destinations.length,
-            itemBuilder: (context, index) {
-              return InteractiveCard(
-                onTap: () {
-                  context.go('/plan',
-                      extra: {'destination': destinations[index].$1});
-                },
-                elevation: 2,
-                pressedElevation: 6,
+      ),
+    );
+  }
+
+  Widget _buildDestinationCard(
+    BuildContext context, {
+    required String image,
+    required String name,
+    required String description,
+    required double rating,
+    required bool isLoading,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ShimmerLoading(
+      isLoading: isLoading,
+      child: InteractiveCard(
+        onTap: () => context.go('/plan', extra: {'destination': name}),
+        child: Container(
+          width: 280,
+          margin: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            image: DecorationImage(
+              image: NetworkImage(image),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                Colors.black.withOpacity(0.3),
+                BlendMode.darken,
+              ),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 16,
+                right: 16,
                 child: Container(
-                  width: 250,
-                  margin: const EdgeInsets.only(right: 16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    image: DecorationImage(
-                      image: NetworkImage(destinations[index].$4),
-                      fit: BoxFit.cover,
-                      colorFilter: const ColorFilter.mode(
-                        Colors.black26,
-                        BlendMode.darken,
-                      ),
-                    ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                  child: Stack(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Positioned(
-                        bottom: 16,
-                        left: 16,
-                        right: 16,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                destinations[index].$1,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                destinations[index].$2,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                destinations[index].$3,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
+                      Icon(
+                        Icons.star,
+                        size: 16,
+                        color: Colors.amber[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        rating.toString(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
                       ),
                     ],
                   ),
                 ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPopularItineraries(BuildContext context) {
-    final itineraries = [
-      (
-        'European Classics',
-        '10 days in Paris, Barcelona, and Amsterdam',
-        'Art, culture, and cuisine across Europe\'s most iconic cities',
-        'https://images.unsplash.com/photo-1471623432079-b009d30b6729?w=600'
-      ),
-      (
-        'Cultural Capitals',
-        '12 days in New York, London, and Paris',
-        'Experience the world\'s most vibrant metropolitan cities',
-        'https://images.unsplash.com/photo-1522083165195-3424ed129620?w=600'
-      ),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Popular Itineraries',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
               ),
-              TextButton(
-                onPressed: () => context.go('/my-itineraries'),
-                child: const Text('See All'),
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        description,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.place,
+                            size: 16,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Explore Now',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          itemCount: itineraries.length,
-          itemBuilder: (context, index) {
-            return InteractiveCard(
-              onTap: () => context.go('/plan'),
-              elevation: 2,
-              pressedElevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        itineraries[index].$4,
-                        width: 120,
-                        height: 120,
-                        fit: BoxFit.cover,
-                      ),
+      ),
+    );
+  }
+
+  Widget _buildItineraryCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required String description,
+    required String image,
+    required double rating,
+    required String price,
+    required bool isLoading,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ShimmerLoading(
+      isLoading: isLoading,
+      child: InteractiveCard(
+        onTap: () => context.go('/plan'),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Image.network(
+                      image,
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            itineraries[index].$1,
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Icon(
+                            Icons.star,
+                            size: 16,
+                            color: Colors.amber[600],
                           ),
+                          const SizedBox(width: 4),
                           Text(
-                            itineraries[index].$2,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          Text(
-                            itineraries[index].$3,
+                            rating.toString(),
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.grey[500],
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 8),
-                          TextButton.icon(
-                            onPressed: () => context.go('/plan'),
-                            icon: const Icon(Icons.content_copy),
-                            label: const Text('Use as Template'),
                           ),
                         ],
                       ),
                     ),
+                  ),
+                  Positioned(
+                    bottom: 16,
+                    left: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'From $price',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      description,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => context.go('/plan'),
+                          icon: const Icon(Icons.content_copy, size: 18),
+                          label: const Text('Use Template'),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.favorite_border),
+                          onPressed: () {},
+                          tooltip: 'Save to favorites',
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.share_outlined),
+                          onPressed: () {},
+                          tooltip: 'Share itinerary',
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-            );
-          },
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }

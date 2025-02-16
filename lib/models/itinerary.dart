@@ -1,4 +1,4 @@
-import 'package:travel_planner_2/models/destination.dart';
+import 'package:travel_planner/models/destination.dart';
 import 'activity_category.dart';
 
 class ItineraryStop {

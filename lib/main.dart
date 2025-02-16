@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/plan_screen.dart';
 import 'ui/screens/itinerary_details_screen.dart';
@@ -29,34 +31,48 @@ import 'providers/theme_settings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive
+  final appDocumentDir = await getApplicationDocumentsDirectory();
+  await Hive.initFlutter(appDocumentDir.path);
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
 final initializationProvider = FutureProvider<void>((ref) async {
-  // Initialize SharedPreferences first
-  final prefs = await SharedPreferences.getInstance();
-  ref.read(storageProvider.notifier).initialize(prefs);
+  try {
+    // Initialize SharedPreferences first
+    final prefs = await SharedPreferences.getInstance();
+    ref.read(storageProvider.notifier).initialize(prefs);
 
-  // Initialize other services
-  final configService = ConfigService();
-  await configService.initialize();
+    // Initialize other services
+    final configService = ConfigService();
+    await configService.initialize();
 
-  // Initialize connectivity monitoring
-  final connectivity = Connectivity();
-  final isOffline =
-      await connectivity.checkConnectivity() == ConnectivityResult.none;
-  ref.read(isOfflineProvider.notifier).state = isOffline;
+    // Initialize connectivity monitoring
+    final connectivity = Connectivity();
+    final isOffline =
+        await connectivity.checkConnectivity() == ConnectivityResult.none;
+    ref.read(isOfflineProvider.notifier).state = isOffline;
 
-  // Initialize notification service
-  final notificationService = NotificationService();
-  await notificationService.initialize();
+    // Initialize notification service
+    final notificationService = NotificationService();
+    await notificationService.initialize();
 
-  // Initialize trip management service
-  final tripManagementService = TripManagementService();
-  await tripManagementService.initialize();
+    // Initialize trip management service
+    final tripManagementService = TripManagementService();
+    await tripManagementService.initialize().catchError((error) {
+      print('Error initializing TripManagementService: $error');
+      // Re-throw to ensure the error is properly handled
+      throw error;
+    });
 
-  // Simulate additional loading time for splash screen
-  await Future.delayed(const Duration(seconds: 2));
+    // Simulate additional loading time for splash screen
+    await Future.delayed(const Duration(seconds: 2));
+  } catch (e) {
+    print('Error during app initialization: $e');
+    rethrow;
+  }
 });
 
 // Service providers
