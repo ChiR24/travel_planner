@@ -8,47 +8,44 @@ class ConfigService {
       : _storage = storage ?? const FlutterSecureStorage();
 
   Future<void> initialize() async {
-    // Check if keys are already stored
-    final hasGeminiKey =
-        await _storage.containsKey(key: ApiConfig.geminiKeyName);
-    final hasGoogleMapsKey =
-        await _storage.containsKey(key: ApiConfig.googleMapsKeyName);
-    final hasWeatherKey =
-        await _storage.containsKey(key: ApiConfig.weatherKeyName);
+    // Always update keys with the latest values from ApiConfig
+    await _storage.write(
+      key: ApiConfig.geminiKeyName,
+      value: ApiConfig.geminiApiKey,
+    );
 
-    // Store keys if not present
-    if (!hasGeminiKey) {
-      await _storage.write(
-        key: ApiConfig.geminiKeyName,
-        value: ApiConfig.geminiApiKey,
-      );
-    }
+    await _storage.write(
+      key: ApiConfig.googleMapsKeyName,
+      value: ApiConfig.googleMapsApiKey,
+    );
 
-    if (!hasGoogleMapsKey) {
-      await _storage.write(
-        key: ApiConfig.googleMapsKeyName,
-        value: ApiConfig.googleMapsApiKey,
-      );
-    }
+    await _storage.write(
+      key: ApiConfig.weatherKeyName,
+      value: ApiConfig.weatherApiKey,
+    );
 
-    if (!hasWeatherKey) {
-      await _storage.write(
-        key: ApiConfig.weatherKeyName,
-        value: ApiConfig.weatherApiKey,
-      );
-    }
+    // Print API keys for debugging
+    print('Initialized ConfigService with:');
+    print('Gemini API Key: ${ApiConfig.geminiApiKey.substring(0, 10)}...');
+    print(
+        'Google Maps API Key: ${ApiConfig.googleMapsApiKey.substring(0, 10)}...');
+    print('Weather API Key: ${ApiConfig.weatherApiKey.substring(0, 10)}...');
+    print('Use Mock Data: ${ApiConfig.useMockData}');
   }
 
   Future<String?> getGeminiApiKey() async {
-    return _storage.read(key: ApiConfig.geminiKeyName);
+    // Return the value directly from ApiConfig
+    return ApiConfig.geminiApiKey;
   }
 
   Future<String?> getGoogleMapsApiKey() async {
-    return _storage.read(key: ApiConfig.googleMapsKeyName);
+    // Return the value directly from ApiConfig
+    return ApiConfig.googleMapsApiKey;
   }
 
   Future<String?> getWeatherApiKey() async {
-    return _storage.read(key: ApiConfig.weatherKeyName);
+    // Return the value directly from ApiConfig
+    return ApiConfig.weatherApiKey;
   }
 
   Future<void> setGeminiApiKey(String apiKey) async {

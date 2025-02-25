@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
+// import 'package:share_plus/share_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/itinerary.dart';
 import '../../providers/notification_provider.dart';
@@ -18,7 +18,7 @@ class ActivityDetailsSheet extends ConsumerWidget {
     required this.onDelete,
   });
 
-  void _shareActivity() {
+  void _shareActivity(BuildContext context) {
     final timeFormat = DateFormat('h:mm a');
     final shareText = '''
 🗓️ ${activity.name}
@@ -31,9 +31,18 @@ ${activity.description}
 Shared from Travel Planner
 ''';
 
-    Share.share(
-      shareText,
-      subject: 'Check out this activity: ${activity.name}',
+    // Temporarily commented out
+    // Share.share(
+    //   shareText,
+    //   subject: 'Check out this activity: ${activity.name}',
+    // );
+
+    // Show a snackbar instead
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Sharing functionality temporarily disabled'),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 
@@ -256,7 +265,7 @@ Shared from Travel Planner
                       icon: Icons.share_outlined,
                       label: 'Share',
                       onTap: () {
-                        _shareActivity();
+                        _shareActivity(context);
                         Navigator.pop(context);
                       },
                     ),

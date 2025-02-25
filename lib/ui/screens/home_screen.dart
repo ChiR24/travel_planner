@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/itinerary/presentation/screens/ai_itinerary_generator_screen.dart';
 import '../widgets/interactive_card.dart';
 import '../widgets/shimmer_loading.dart';
 
@@ -204,11 +205,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
                 _buildQuickActionCard(
                   context,
-                  title: 'Metrics',
-                  subtitle: 'Travel statistics',
-                  icon: Icons.analytics_outlined,
+                  title: 'AI Generator',
+                  subtitle: 'AI-powered itineraries',
+                  icon: Icons.auto_awesome,
                   color: colorScheme.tertiary,
-                  onTap: () => context.go('/metrics'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AIItineraryGeneratorScreen(),
+                    ),
+                  ),
                   isLoading: isLoading,
                 ),
                 _buildQuickActionCard(

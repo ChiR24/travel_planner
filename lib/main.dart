@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/plan_screen.dart';
 import 'ui/screens/itinerary_details_screen.dart';
@@ -29,12 +31,27 @@ import 'providers/trip_management_provider.dart';
 import 'services/trip_management_service.dart';
 import 'providers/theme_settings_provider.dart';
 
+// Import platform-specific dependencies conditionally
+import 'platform/platform_imports.dart'
+    if (dart.library.html) 'platform/web_imports.dart';
+
+// Conditionally import path_provider only for non-web platforms
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive
-  final appDocumentDir = await getApplicationDocumentsDirectory();
-  await Hive.initFlutter(appDocumentDir.path);
+  // Load environment variables
+  try {
+    await dotenv.load(fileName: ".env");
+    print("Environment variables loaded successfully");
+  } catch (e) {
+    print("Error loading environment variables: $e");
+    // Continue with default values
+  }
+
+  // Initialize platform-specific services
+  await initializePlatformServices();
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -49,29 +66,15 @@ final initializationProvider = FutureProvider<void>((ref) async {
     final configService = ConfigService();
     await configService.initialize();
 
-    // Initialize connectivity monitoring
-    final connectivity = Connectivity();
-    final isOffline =
-        await connectivity.checkConnectivity() == ConnectivityResult.none;
-    ref.read(isOfflineProvider.notifier).state = isOffline;
-
-    // Initialize notification service
-    final notificationService = NotificationService();
-    await notificationService.initialize();
-
-    // Initialize trip management service
-    final tripManagementService = TripManagementService();
-    await tripManagementService.initialize().catchError((error) {
-      print('Error initializing TripManagementService: $error');
-      // Re-throw to ensure the error is properly handled
-      throw error;
-    });
+    // Initialize platform-specific services
+    await initializeProviderServices(ref);
 
     // Simulate additional loading time for splash screen
     await Future.delayed(const Duration(seconds: 2));
   } catch (e) {
     print('Error during app initialization: $e');
-    rethrow;
+    // Handle error but don't rethrow to prevent app from crashing
+    print('Continuing with limited functionality');
   }
 });
 

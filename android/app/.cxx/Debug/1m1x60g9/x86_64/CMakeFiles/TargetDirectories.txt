@@ -1,0 +1,2 @@
+X:/GitHub/travel_planner_2/android/app/.cxx/Debug/1m1x60g9/x86_64/CMakeFiles/edit_cache.dir
+X:/GitHub/travel_planner_2/android/app/.cxx/Debug/1m1x60g9/x86_64/CMakeFiles/rebuild_cache.dir

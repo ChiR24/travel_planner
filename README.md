@@ -1,6 +1,123 @@
-# Travel Planner Pro
+# Travel Planner 2.0
 
-A modern, feature-rich travel planning application built with Flutter that helps users create personalized travel itineraries with AI-powered suggestions and comprehensive trip management features.
+A comprehensive travel planning application built with Flutter and Riverpod, designed to help users plan, organize, and manage their trips efficiently.
+
+## Recent Improvements
+
+### Architecture Improvements
+
+1. **Feature-First Architecture**
+   - Reorganized the codebase into a feature-first structure
+   - Created separate directories for each feature with data, domain, and presentation layers
+   - Improved code organization and maintainability
+
+2. **Core Components**
+   - Added centralized error handling with `AppErrorHandler`
+   - Implemented adaptive layouts for better responsiveness across different screen sizes
+   - Created reusable skeleton loading screens for improved UX during data loading
+
+### UI/UX Enhancements
+
+1. **Skeleton Loading Screens**
+   - Replaced traditional loading spinners with skeleton screens
+   - Provides a smoother, more engaging loading experience
+   - Reduces perceived loading time
+
+2. **Haptic Feedback**
+   - Added haptic feedback for key interactions
+   - Enhances the tactile experience of the app
+   - Provides subtle feedback for user actions
+
+3. **Adaptive Layouts**
+   - Implemented responsive design that adapts to different screen sizes
+   - Optimized layouts for mobile, tablet, and desktop
+   - Improved user experience across devices
+
+### New Features
+
+1. **Offline Maps with MapBox**
+   - Added support for offline maps
+   - Users can download maps for their destinations
+   - Improved functionality for users in areas with poor connectivity
+
+2. **AI-Powered Itinerary Generation**
+   - Implemented an AI service for generating trip itineraries
+   - Takes user preferences, destination, and dates as input
+   - Creates personalized itineraries with activities and schedules
+
+3. **Social Sharing and Collaboration**
+   - Added ability to share itineraries with travel companions
+   - Implemented collaborative editing features
+   - Enhanced the social aspect of trip planning
+
+## Getting Started
+
+### Prerequisites
+
+- Flutter 3.0.0 or higher
+- Dart 2.17.0 or higher
+
+### Installation
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/travel_planner_2.git
+   ```
+
+2. Navigate to the project directory:
+   ```
+   cd travel_planner_2
+   ```
+
+3. Install dependencies:
+   ```
+   flutter pub get
+   ```
+
+4. Run the app:
+   ```
+   flutter run
+   ```
+
+## Project Structure
+
+```
+lib/
+├── core/                  # Core utilities and widgets
+│   ├── theme/             # App theming
+│   ├── utils/             # Utility functions
+│   └── widgets/           # Reusable widgets
+├── features/              # Feature modules
+│   ├── itinerary/         # Itinerary feature
+│   │   ├── data/          # Data sources and repositories
+│   │   ├── domain/        # Business logic and models
+│   │   └── presentation/  # UI components
+│   ├── trip_management/   # Trip management feature
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   └── preferences/       # User preferences feature
+│       ├── data/
+│       ├── domain/
+│       └── presentation/
+├── models/                # Data models
+├── services/              # Services
+├── providers/             # Riverpod providers
+├── ui/                    # UI components
+├── app.dart               # App configuration
+└── main.dart              # Entry point
+```
+
+## Future Improvements
+
+- Implement unit and widget tests for improved code quality
+- Add support for more languages and localization
+- Integrate with more travel APIs for real-time data
+- Implement advanced trip analytics and insights
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ![Flutter Version](https://img.shields.io/badge/flutter-3.19.0-blue.svg)
 ![Dart Version](https://img.shields.io/badge/dart-3.6.2-blue.svg)

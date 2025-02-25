@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import '../models/itinerary.dart';
+import '../models/activity_category.dart';
+import '../config/api_config.dart';
 import 'api_service.dart';
 
 class ItineraryService {
@@ -26,7 +29,49 @@ class ItineraryService {
     required DateTime endDate,
     required Map<String, dynamic> preferences,
   }) async {
-    if (_geminiApiKey.isEmpty) {
+    print('ItineraryService.generateItinerary called');
+    print('useMockData: ${ApiConfig.useMockData}');
+
+    // Print the first few characters of the API key for debugging
+    String keyPrefix = _geminiApiKey.isNotEmpty
+        ? _geminiApiKey.substring(0, math.min(10, _geminiApiKey.length)) + "..."
+        : "empty";
+    print('Using Gemini API key (prefix): $keyPrefix');
+
+    // Use the API key from ApiConfig if the provided key is empty or invalid
+    final String effectiveApiKey =
+        (_geminiApiKey.isEmpty || _geminiApiKey.contains('DemoKey'))
+            ? ApiConfig.geminiApiKey
+            : _geminiApiKey;
+
+    print(
+        'Using effective API key (prefix): ${effectiveApiKey.substring(0, math.min(10, effectiveApiKey.length))}...');
+
+    // If useMockData is true, skip the API call and return mock data directly
+    if (ApiConfig.useMockData) {
+      print('Using mock data for itinerary generation (useMockData is true)');
+      return _generateMockItinerary(
+        origin: origin,
+        destinations: destinations,
+        startDate: startDate,
+        endDate: endDate,
+        preferences: preferences,
+      );
+    }
+
+    // Check if Gemini API key is valid
+    if (effectiveApiKey.isEmpty || effectiveApiKey.contains('DemoKey')) {
+      print('Invalid Gemini API key. Using mock data instead.');
+      return _generateMockItinerary(
+        origin: origin,
+        destinations: destinations,
+        startDate: startDate,
+        endDate: endDate,
+        preferences: preferences,
+      );
+    }
+
+    if (effectiveApiKey.isEmpty) {
       throw Exception(
           'Gemini API key not configured. Please check your configuration.');
     }
@@ -95,7 +140,7 @@ Return ONLY valid JSON without any markdown formatting or additional text.''';
         }
 
         final response = await http.post(
-          Uri.parse('$baseUrl?key=$_geminiApiKey'),
+          Uri.parse('$baseUrl?key=$effectiveApiKey'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'contents': [
@@ -210,5 +255,150 @@ Return ONLY valid JSON without any markdown formatting or additional text.''';
       }
     } catch (_) {}
     return body;
+  }
+
+  /// Generates a mock itinerary for demonstration purposes.
+  Itinerary _generateMockItinerary({
+    required String origin,
+    required List<String> destinations,
+    required DateTime startDate,
+    required DateTime endDate,
+    required Map<String, dynamic> preferences,
+  }) {
+    final days = <Day>[];
+    final dayCount = endDate.difference(startDate).inDays + 1;
+    final destination =
+        destinations.isNotEmpty ? destinations.first : 'Unknown';
+
+    // Generate days
+    for (int i = 0; i < dayCount; i++) {
+      final date = startDate.add(Duration(days: i));
+      final activities = _generateActivitiesForDay(
+        date,
+        destination,
+        preferences,
+      );
+
+      days.add(Day(location: destination, activities: activities));
+    }
+
+    return Itinerary(
+      id: _uuid.v4(),
+      origin: origin,
+      destinations: destinations,
+      startDate: startDate,
+      endDate: endDate,
+      preferences: preferences,
+      days: days,
+    );
+  }
+
+  /// Generates mock activities for a day.
+  List<Activity> _generateActivitiesForDay(
+    DateTime date,
+    String destination,
+    Map<String, dynamic> preferences,
+  ) {
+    final activities = <Activity>[];
+    final budget = preferences['budget'] ?? 'moderate';
+
+    // Adjust activity quality based on budget
+    String qualityPrefix = '';
+    if (budget == 'luxury') {
+      qualityPrefix = 'Luxury ';
+    } else if (budget == 'budget') {
+      qualityPrefix = 'Budget-friendly ';
+    }
+
+    // Morning activity
+    activities.add(
+      Activity(
+        name: '${qualityPrefix}Breakfast at Local Cafe',
+        description:
+            'Start your day with a delicious breakfast at a popular local cafe.',
+        startTime: DateTime(date.year, date.month, date.day, 8, 0),
+        endTime: DateTime(date.year, date.month, date.day, 9, 30),
+        category: ActivityCategory.dining,
+        tags: ['breakfast', 'local', 'cafe'],
+      ),
+    );
+
+    // Late morning activity
+    activities.add(
+      Activity(
+        name: 'Visit $destination Museum',
+        description:
+            'Explore the cultural heritage of $destination at its famous museum.',
+        startTime: DateTime(date.year, date.month, date.day, 10, 0),
+        endTime: DateTime(date.year, date.month, date.day, 12, 30),
+        category: ActivityCategory.culture,
+        tags: ['museum', 'culture', 'history'],
+      ),
+    );
+
+    // Lunch
+    activities.add(
+      Activity(
+        name: '${qualityPrefix}Lunch at Downtown Restaurant',
+        description:
+            'Enjoy a delicious lunch at a popular restaurant in downtown $destination.',
+        startTime: DateTime(date.year, date.month, date.day, 13, 0),
+        endTime: DateTime(date.year, date.month, date.day, 14, 30),
+        category: ActivityCategory.dining,
+        tags: ['lunch', 'restaurant', 'downtown'],
+      ),
+    );
+
+    // Afternoon activity
+    ActivityCategory afternoonCategory;
+    String afternoonName;
+    String afternoonDescription;
+    List<String> afternoonTags;
+
+    if (preferences['adventure'] == true) {
+      afternoonCategory = ActivityCategory.adventure;
+      afternoonName = 'Hiking in $destination National Park';
+      afternoonDescription =
+          'Experience the natural beauty of $destination with a guided hiking tour.';
+      afternoonTags = ['hiking', 'nature', 'adventure'];
+    } else if (preferences['shopping'] == true) {
+      afternoonCategory = ActivityCategory.shopping;
+      afternoonName = 'Shopping at $destination Mall';
+      afternoonDescription =
+          'Explore the best shopping destinations in $destination.';
+      afternoonTags = ['shopping', 'mall', 'retail'];
+    } else {
+      afternoonCategory = ActivityCategory.sightseeing;
+      afternoonName = 'City Tour of $destination';
+      afternoonDescription =
+          'Discover the landmarks and hidden gems of $destination with a guided city tour.';
+      afternoonTags = ['tour', 'sightseeing', 'landmarks'];
+    }
+
+    activities.add(
+      Activity(
+        name: afternoonName,
+        description: afternoonDescription,
+        startTime: DateTime(date.year, date.month, date.day, 15, 0),
+        endTime: DateTime(date.year, date.month, date.day, 18, 0),
+        category: afternoonCategory,
+        tags: afternoonTags,
+      ),
+    );
+
+    // Evening activity
+    activities.add(
+      Activity(
+        name: '${qualityPrefix}Dinner at $destination Signature Restaurant',
+        description:
+            'End your day with a memorable dining experience at one of $destination\'s finest restaurants.',
+        startTime: DateTime(date.year, date.month, date.day, 19, 0),
+        endTime: DateTime(date.year, date.month, date.day, 21, 0),
+        category: ActivityCategory.dining,
+        tags: ['dinner', 'fine dining', 'local cuisine'],
+      ),
+    );
+
+    return activities;
   }
 }

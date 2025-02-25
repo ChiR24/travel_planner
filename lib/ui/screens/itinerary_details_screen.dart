@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
+// import 'package:share_plus/share_plus.dart';
 import '../../models/itinerary.dart';
 import '../../providers/itinerary_provider.dart';
 import '../widgets/timeline_view.dart';
@@ -11,6 +11,8 @@ import '../widgets/activity_details_sheet.dart';
 import '../widgets/interactive_card.dart';
 import '../widgets/shimmer_loading.dart';
 import '../widgets/edit_activity_dialog.dart';
+import '../../widgets/weather_card.dart';
+import '../../widgets/map_view.dart';
 
 final _detailsLoadingProvider = StateProvider<bool>((ref) => true);
 
@@ -249,9 +251,18 @@ ${day.activities.map((activity) => '''
 Created with Travel Planner
 ''';
 
-    await Share.share(
-      shareText,
-      subject: 'Travel Itinerary: ${itinerary.destinations.join(' → ')}',
+    // Temporarily commented out
+    // await Share.share(
+    //   shareText,
+    //   subject: 'Travel Itinerary: ${itinerary.destinations.join(' → ')}',
+    // );
+
+    // Show a snackbar instead
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Sharing functionality temporarily disabled'),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
@@ -428,6 +439,14 @@ Created with Travel Planner
                               ),
                             ],
                           ),
+
+                          // Weather Card for the current day's location
+                          const SizedBox(height: 16),
+                          WeatherCard(
+                            location: days[_selectedDayIndex].location,
+                            showForecast: true,
+                          ),
+
                           const SizedBox(height: 24),
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
@@ -499,88 +518,67 @@ Created with Travel Planner
                 ),
               ),
             ),
-            // Activities Timeline
+            // Day Activities
             SliverToBoxAdapter(
               child: ShimmerLoading(
                 isLoading: isLoading,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: InteractiveCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.secondary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.schedule,
-                                  color: colorScheme.secondary,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Day ${_selectedDayIndex + 1} Activities',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.secondary,
-                                      ),
-                                    ),
-                                    Text(
-                                      days[_selectedDayIndex].location,
-                                      style: GoogleFonts.poppins(
-                                        color: colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.add),
-                                onPressed: () => _addActivity(
-                                    context, days[_selectedDayIndex]),
-                              ),
-                            ],
+                          Text(
+                            'Day ${_selectedDayIndex + 1} Activities',
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          const SizedBox(height: 24),
-                          TimelineView(
-                            activities: days[_selectedDayIndex].activities,
-                            onReorder: _reorderActivities,
-                            onActivityTap: (activity) {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => ActivityDetailsSheet(
-                                  activity: activity,
-                                  onEdit: () {
-                                    Navigator.pop(context);
-                                    _editActivity(context,
-                                        days[_selectedDayIndex], activity);
-                                  },
-                                  onDelete: () {
-                                    Navigator.pop(context);
-                                    _deleteActivity(context, activity);
-                                  },
-                                ),
-                              );
-                            },
+                          IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: () => _addActivity(
+                              context,
+                              days[_selectedDayIndex],
+                            ),
                           ),
                         ],
                       ),
-                    ),
+
+                      // Map view of the day's location
+                      const SizedBox(height: 16),
+                      MapView(
+                        location: days[_selectedDayIndex].location,
+                        height: 200,
+                      ),
+                      const SizedBox(height: 16),
+
+                      TimelineView(
+                        activities: days[_selectedDayIndex].activities,
+                        onReorder: _reorderActivities,
+                        onActivityTap: (activity) {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => ActivityDetailsSheet(
+                              activity: activity,
+                              onEdit: () {
+                                Navigator.pop(context);
+                                _editActivity(
+                                    context, days[_selectedDayIndex], activity);
+                              },
+                              onDelete: () {
+                                Navigator.pop(context);
+                                _deleteActivity(context, activity);
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
