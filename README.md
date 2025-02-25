@@ -2,6 +2,30 @@
 
 A comprehensive travel planning application built with Flutter and Riverpod, designed to help users plan, organize, and manage their trips efficiently.
 
+## Latest Release - v1.0.2
+
+### Recent Fixes and Improvements
+
+1. **Weather API Integration**
+   - Fixed Weather API integration to use HTTPS for secure API calls
+   - Updated weather icon URLs to use secure connections
+   - Improved weather data parsing and display
+
+2. **Google Maps Integration**
+   - Added Google Maps JavaScript API integration for the web version
+   - Fixed map rendering issues across platforms
+   - Enhanced location services reliability
+
+3. **URL Launcher Dependency**
+   - Updated URL launcher package to the latest version
+   - Fixed compatibility issues with newer Flutter versions
+   - Resolved issues with opening external links
+
+4. **Performance Optimizations**
+   - Improved app startup time
+   - Reduced memory usage during weather data processing
+   - Enhanced overall UI responsiveness
+
 ## Recent Improvements
 
 ### Architecture Improvements
