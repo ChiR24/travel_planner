@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:travel_planner_2/services/service_metrics.dart';
-import 'package:travel_planner_2/services/base_service_response.dart';
+import 'package:travel_planner/services/service_metrics.dart';
+import 'package:travel_planner/services/base_service_response.dart';
 
 void main() {
   late MetricsService metricsService;

@@ -10,8 +10,6 @@ import 'api_service.dart';
 class ItineraryService {
   final ApiService _apiService;
   final String _geminiApiKey;
-  final String baseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
   final _uuid = const Uuid();
   static const int _maxRetries = 3;
   static const Duration _retryDelay = Duration(seconds: 2);
@@ -30,7 +28,7 @@ class ItineraryService {
     required Map<String, dynamic> preferences,
   }) async {
     print('ItineraryService.generateItinerary called');
-    print('useMockData: ${ApiConfig.useMockData}');
+    // Removed legacy useMockData debug logging.
 
     // Print the first few characters of the API key for debugging
     String keyPrefix = _geminiApiKey.isNotEmpty
@@ -47,31 +45,8 @@ class ItineraryService {
     print(
         'Using effective API key (prefix): ${effectiveApiKey.substring(0, math.min(10, effectiveApiKey.length))}...');
 
-    // If useMockData is true, skip the API call and return mock data directly
-    if (ApiConfig.useMockData) {
-      print('Using mock data for itinerary generation (useMockData is true)');
-      return _generateMockItinerary(
-        origin: origin,
-        destinations: destinations,
-        startDate: startDate,
-        endDate: endDate,
-        preferences: preferences,
-      );
-    }
-
     // Check if Gemini API key is valid
     if (effectiveApiKey.isEmpty || effectiveApiKey.contains('DemoKey')) {
-      print('Invalid Gemini API key. Using mock data instead.');
-      return _generateMockItinerary(
-        origin: origin,
-        destinations: destinations,
-        startDate: startDate,
-        endDate: endDate,
-        preferences: preferences,
-      );
-    }
-
-    if (effectiveApiKey.isEmpty) {
       throw Exception(
           'Gemini API key not configured. Please check your configuration.');
     }
@@ -140,7 +115,7 @@ Return ONLY valid JSON without any markdown formatting or additional text.''';
         }
 
         final response = await http.post(
-          Uri.parse('$baseUrl?key=$effectiveApiKey'),
+          Uri.parse('${ApiConfig.geminiApiBaseUrl}?key=$effectiveApiKey'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'contents': [
@@ -257,8 +232,8 @@ Return ONLY valid JSON without any markdown formatting or additional text.''';
     return body;
   }
 
-  /// Generates a mock itinerary for demonstration purposes.
-  Itinerary _generateMockItinerary({
+  /// Removed legacy mock itinerary generator to ensure only real API responses are used.
+  /// Itinerary _generateMockItinerary({ // removed
     required String origin,
     required List<String> destinations,
     required DateTime startDate,

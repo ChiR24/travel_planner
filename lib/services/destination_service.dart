@@ -15,8 +15,7 @@ class DestinationService {
           .map((json) => Destination.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      // For now, return mock data
-      return _getMockDestinations();
+      rethrow;
     }
   }
 
@@ -25,13 +24,12 @@ class DestinationService {
       final response = await _apiService.get('/destinations/$id');
       return Destination.fromJson(response);
     } catch (e) {
-      // Return a mock destination for now
-      return _getMockDestinations().first;
+      rethrow;
     }
   }
 
-  // Mock data for development
-  List<Destination> _getMockDestinations() {
+  // Removed legacy mock destination helper to ensure only real API data is used.
+  // List<Destination> _getMockDestinations() { // removed
     return [
       Destination(
         id: '1',

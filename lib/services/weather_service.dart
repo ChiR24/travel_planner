@@ -31,12 +31,6 @@ class WeatherService {
   /// Fetches weather forecast for a location
   Future<List<WeatherData>> getForecast(String location, {int days = 3}) async {
     try {
-      // If using mock data, return mock forecast
-      if (ApiConfig.useMockData) {
-        print('Using mock data for weather forecast: $location');
-        return _getMockForecast(location, days);
-      }
-
       final response = await http.get(
         Uri.parse(
             '$_baseUrl/forecast.json?key=$_apiKey&q=$location&days=$days&aqi=no'),
@@ -84,8 +78,8 @@ class WeatherService {
     }
   }
 
-  // Add a method to generate mock forecast data
-  List<WeatherData> _getMockForecast(String location, int days) {
+  // Removed legacy mock forecast helper to ensure only real API data is used.
+  // List<WeatherData> _getMockForecast(String location, int days) { // removed
     final List<WeatherData> result = [];
     final now = DateTime.now();
 

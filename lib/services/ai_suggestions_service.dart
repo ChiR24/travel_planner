@@ -3,11 +3,10 @@ import 'package:http/http.dart' as http;
 import '../models/itinerary.dart';
 import '../models/activity_category.dart';
 import 'config_service.dart';
+import '../config/api_config.dart';
 
 class AISuggestionsService {
   final String _geminiApiKey;
-  final String _baseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
 
   AISuggestionsService({required String geminiApiKey})
       : _geminiApiKey = geminiApiKey;
@@ -62,7 +61,7 @@ Return ONLY valid JSON without any markdown formatting or additional text.''';
 
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl?key=$_geminiApiKey'),
+        Uri.parse('${ApiConfig.geminiApiBaseUrl}?key=$_geminiApiKey'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'contents': [
@@ -144,7 +143,7 @@ Return the information in this JSON format:
 
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl?key=$_geminiApiKey'),
+        Uri.parse('${ApiConfig.geminiApiBaseUrl}?key=$_geminiApiKey'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'contents': [
@@ -223,7 +222,7 @@ Return the information in this JSON format:
 
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl?key=$_geminiApiKey'),
+        Uri.parse('${ApiConfig.geminiApiBaseUrl}?key=$_geminiApiKey'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'contents': [

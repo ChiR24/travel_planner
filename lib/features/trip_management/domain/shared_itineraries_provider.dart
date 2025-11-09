@@ -5,9 +5,11 @@ import 'package:http/http.dart' as http;
 import '../../../models/itinerary.dart';
 
 /// A service for managing shared itineraries.
+/// NOTE: Example-only shared itineraries service. Not used in production.
+/// To enable, provide a real backend URL and inject auth tokens via a secure provider.
 class SharedItinerariesService {
   final String _baseUrl =
-      'https://api.example.com/shared-itineraries'; // Replace with actual API endpoint
+      ApiConfig.sharedItinerariesBaseUrl; // Configure real API endpoint via ApiConfig
 
   /// Fetches shared itineraries for the current user.
   Future<List<Itinerary>> getSharedItineraries() async {
@@ -18,7 +20,7 @@ class SharedItinerariesService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization':
-              'Bearer YOUR_AUTH_TOKEN', // Replace with actual auth token
+              'Bearer TODO_INJECT_AUTH_TOKEN', // placeholder
         },
       );
 
@@ -51,7 +53,7 @@ class SharedItinerariesService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization':
-              'Bearer YOUR_AUTH_TOKEN', // Replace with actual auth token
+              'Bearer TODO_INJECT_AUTH_TOKEN', // placeholder
         },
         body: jsonEncode({
           'itineraryId': itineraryId,
@@ -83,7 +85,7 @@ class SharedItinerariesService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization':
-              'Bearer YOUR_AUTH_TOKEN', // Replace with actual auth token
+              'Bearer TODO_INJECT_AUTH_TOKEN', // placeholder
         },
         body: jsonEncode({
           'itineraryId': itineraryId,

@@ -19,12 +19,6 @@ class MapsService {
   /// Get coordinates for a location by address
   Future<Map<String, dynamic>> getLocationCoordinates(String location) async {
     try {
-      // For web platform or when using mock data, use a more permissive approach
-      if (kIsWeb || ApiConfig.useMockData) {
-        print('Using alternative location lookup for web or mock data');
-        return _getMockCoordinates(location);
-      }
-
       final url =
           'https://maps.googleapis.com/maps/api/geocode/json?address=$location&key=$_apiKey';
       final response = await http.get(Uri.parse(url));
@@ -51,35 +45,12 @@ class MapsService {
       throw Exception('Failed to get location coordinates');
     } catch (e) {
       print('Error getting location coordinates for $location: $e');
-      // Fallback to mock data on error
-      return _getMockCoordinates(location);
+      rethrow;
     }
   }
 
   /// Get route points between two locations
   Future<List<LatLng>> getRoutePoints(LatLng origin, LatLng destination) async {
-    // If using mock data, return a simple route
-    if (ApiConfig.useMockData) {
-      print('Using mock data for route points');
-      // Create a simple route with a few points between origin and destination
-      final points = <LatLng>[];
-      points.add(origin);
-
-      // Add some intermediate points
-      final latDiff = destination.latitude - origin.latitude;
-      final lngDiff = destination.longitude - origin.longitude;
-
-      for (int i = 1; i < 5; i++) {
-        points.add(LatLng(
-          origin.latitude + (latDiff * i / 5),
-          origin.longitude + (lngDiff * i / 5),
-        ));
-      }
-
-      points.add(destination);
-      return points;
-    }
-
     try {
       print(
           'Fetching route points from ${origin.latitude},${origin.longitude} to ${destination.latitude},${destination.longitude}');
@@ -123,56 +94,6 @@ class MapsService {
   /// Get travel time and distance between two locations
   Future<Map<String, dynamic>> getTravelInfo(LatLng origin, LatLng destination,
       {String mode = 'driving'}) async {
-    // If using mock data, return mock travel info
-    if (ApiConfig.useMockData) {
-      print('Using mock data for travel info');
-
-      // Calculate approximate distance in meters (very rough estimate)
-      final double lat1 = origin.latitude;
-      final double lon1 = origin.longitude;
-      final double lat2 = destination.latitude;
-      final double lon2 = destination.longitude;
-
-      const double p = 0.017453292519943295; // Math.PI / 180
-      final double a = 0.5 -
-          math.cos((lat2 - lat1) * p) / 2 +
-          math.cos(lat1 * p) *
-              math.cos(lat2 * p) *
-              (1 - math.cos((lon2 - lon1) * p)) /
-              2;
-      final double distanceInMeters = 12742000 *
-          math.sqrt(math.asin(a)); // 2 * R * asin(sqrt(a)), R = 6371 km
-
-      // Estimate duration based on average speed (50 km/h)
-      final int durationInSeconds = (distanceInMeters / (50000 / 3600)).round();
-
-      // Format distance and duration
-      String distanceText;
-      if (distanceInMeters < 1000) {
-        distanceText = '${distanceInMeters.round()} m';
-      } else {
-        distanceText = '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
-      }
-
-      String durationText;
-      if (durationInSeconds < 60) {
-        durationText = '$durationInSeconds secs';
-      } else if (durationInSeconds < 3600) {
-        durationText = '${(durationInSeconds / 60).round()} mins';
-      } else {
-        final hours = (durationInSeconds / 3600).floor();
-        final mins = ((durationInSeconds % 3600) / 60).round();
-        durationText = '$hours hours $mins mins';
-      }
-
-      return {
-        'distance': distanceText,
-        'distance_value': distanceInMeters.round(),
-        'duration': durationText,
-        'duration_value': durationInSeconds,
-      };
-    }
-
     try {
       print(
           'Fetching travel info from ${origin.latitude},${origin.longitude} to ${destination.latitude},${destination.longitude}');
@@ -351,7 +272,7 @@ class MapsService {
     _placeDetailsCache.clear();
   }
 
-  Map<String, dynamic> _getMockCoordinates(String location) {
+  // Map<String, dynamic> _getMockCoordinates(String location) { // removed
     // Predefined coordinates for common locations
     final Map<String, Map<String, dynamic>> knownLocations = {
       'paris': {

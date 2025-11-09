@@ -1,6 +1,6 @@
 {
-    "name": "travel_planner_2",
-    "short_name": "travel_planner_2",
+    "name": "travel_planner",
+    "short_name": "travel_planner",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

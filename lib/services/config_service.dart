@@ -30,7 +30,7 @@ class ConfigService {
     print(
         'Google Maps API Key: ${ApiConfig.googleMapsApiKey.substring(0, 10)}...');
     print('Weather API Key: ${ApiConfig.weatherApiKey.substring(0, 10)}...');
-    print('Use Mock Data: ${ApiConfig.useMockData}');
+    // Removed legacy mock-data flag logging.
   }
 
   Future<String?> getGeminiApiKey() async {

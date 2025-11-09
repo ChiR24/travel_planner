@@ -67,3 +67,4 @@ api_endpoints.dart
 firebase_options.dart
 firebase.json
 .firebaserc
+.claude/

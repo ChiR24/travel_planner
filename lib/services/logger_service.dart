@@ -42,9 +42,6 @@ class LoggerService {
       } else {
         if (defaultTargetPlatform == TargetPlatform.android) {
           _deviceInfo = _convertAndroidDeviceInfo(await deviceInfo.androidInfo);
-        } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-          _deviceInfo = _convertiOSDeviceInfo(await deviceInfo.iosInfo);
-        }
       }
 
       if (_enableCrashlytics && _crashlytics != null) {
@@ -130,15 +127,6 @@ class LoggerService {
     };
   }
 
-  Map<String, dynamic> _convertiOSDeviceInfo(IosDeviceInfo info) {
-    return {
-      'name': info.name,
-      'system_name': info.systemName,
-      'system_version': info.systemVersion,
-      'model': info.model,
-      'localized_model': info.localizedModel,
-    };
-  }
 
   // Log groups
   void beginGroup(String message) {

@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "flutter-analyze-and-test",
+			"type": "shell",
+			"command": "flutter; test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$dart-error"
+			],
+			"group": "build"
+		}
+	]
+}

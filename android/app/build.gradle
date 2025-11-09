@@ -29,7 +29,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.example.travel_planner_2"
+    namespace "com.example.travel_planner"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
